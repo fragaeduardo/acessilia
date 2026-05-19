@@ -11,6 +11,7 @@ from bot.agente_mestre import process
 from bot.agents.state_manager import TaskCancelledError
 from bot.utils.logger import logger
 from bot.utils.validators import validate_file
+from bot.utils.status_tracker import StatusTracker
 from bot.exporters.txt_exporter import export_txt
 from bot.exporters.docx_exporter import export_docx
 from bot.exporters.pdf_exporter import export_pdf
@@ -87,23 +88,18 @@ async def process_file(
     filename: str,
     mode: str = "normal",
 ) -> None:
+    tracker = StatusTracker(message.bot, message.chat.id, filename)
+
     with tempfile.TemporaryDirectory(dir=settings.temp_dir) as tmpdir:
         try:
             input_path = Path(tmpdir) / filename
 
-            chat_id = message.chat.id
-            bot = message.bot
-
-            async def send(msg: str) -> None:
-                await _send_with_retry(bot, chat_id, msg)
-
-            await send("⬇️ Baixando arquivo...")
+            await tracker("Baixando arquivo...")
             await download_file(message.bot, file_id, input_path)
 
-            extracted_text = await process(input_path, status_callback=send, mode=mode)
+            extracted_text = await process(input_path, status_callback=tracker, mode=mode)
 
-            await send("✅ Conteudo extraido com sucesso! Preparando exportacao...")
-            await send("📝 Gerando versao acessivel...")
+            await tracker("Conteudo extraido com sucesso! Preparando exportacao...")
 
             OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -116,7 +112,7 @@ async def process_file(
             export_docx(extracted_text, docx_path, filename)
             export_pdf(extracted_text, pdf_path, filename)
 
-            await send("📤 Enviando arquivos...")
+            await tracker("Enviando arquivos...")
 
             caption = "Versao acessivel gerada."
 
@@ -127,12 +123,11 @@ async def process_file(
                     if i < len(out_paths) - 1:
                         await asyncio.sleep(1.5)
 
-            await send("✅ Conversao concluida! Arquivos gerados em TXT, DOCX e PDF.")
+            await tracker.finish(success=True)
 
         except TaskCancelledError:
-            await send("🚫 Processamento cancelado.")
+            await tracker("Processamento cancelado.")
+            await tracker.finish(success=False)
         except Exception:
             logger.exception("Erro ao processar arquivo")
-            await send(
-                "❌ Erro ao processar o arquivo. Tente novamente mais tarde."
-            )
+            await tracker.finish(success=False)
