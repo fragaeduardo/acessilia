@@ -21,6 +21,7 @@ class _OutlineDocTemplate(SimpleDocTemplate):
         self._outline_data = []
         self._outline_counter = 0
         self._prev_level = 0
+        self._outline_built = False
 
     def afterFlowable(self, flowable):
         if isinstance(flowable, Paragraph):
@@ -39,8 +40,14 @@ class _OutlineDocTemplate(SimpleDocTemplate):
         super().afterFlowable(flowable)
 
     def handle_pageEnd(self):
-        for level, text, key in self._outline_data:
-            self.canv.addOutlineEntry(text, key, level, closed=False)
+        if not self._outline_built and self._outline_data:
+            current_level = -1
+            for level, text, key in self._outline_data:
+                if level > current_level + 1:
+                    level = current_level + 1
+                self.canv.addOutlineEntry(text, key, level, closed=False)
+                current_level = level
+            self._outline_built = True
         super().handle_pageEnd()
 
 

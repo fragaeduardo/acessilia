@@ -28,11 +28,24 @@ async def cmd_start(message: Message) -> None:
 async def cmd_help(message: Message) -> None:
     text = (
         "Comandos disponíveis:"
+        "\n\n🔧 Gerais:"
         "\n/start - Iniciar o bot"
-        "\n/ajuda  - Mostrar esta mensagem"
-        "\n/formatos - Listar formatos suportados"
-        "\n\n"
-        "Basta enviar um arquivo que eu processo automaticamente."
+        "\n/ajuda ou /help - Mostrar esta mensagem"
+        "\n/formatos - Listar formatos de entrada e saída suportados"
+        "\n\n🎨 Modos de Descrição:"
+        "\n/detalhado - Máximo detalhe: tipografia, cores, layout, posição de elementos"
+        "\n/medio - Texto completo + descrição clara de imagens (padrão)"
+        "\n/baixo - Foco no conteúdo: texto + descrição concisa (mais rápido)"
+        "\n/normal - Equivalente ao /medio"
+        "\n/ocr - Apenas extração de texto, sem descrição visual"
+        "\n\n⚙️ Controle:"
+        "\n/status - Ver tarefas em processamento e progresso"
+        "\n/cancelar - Cancelar tarefa em andamento"
+        "\n/desativar - Desativar o bot neste chat"
+        "\n/ativar - Reativar o bot neste chat"
+        "\n/health - Verificar status do sistema (servidor, modelo, disco)"
+        "\n/feedback - Enviar opinião sobre a qualidade do processamento"
+        "\n\nBasta enviar um arquivo que eu processo automaticamente."
     )
     await message.answer(text)
 
@@ -75,8 +88,44 @@ async def cmd_detailed(message: Message) -> None:
     user_modes[message.chat.id] = "detalhado"
     text = (
         "🔍 Modo Detalhado ativado!\n\n"
-        "Envie um PDF ou imagem e recebera uma descricao visual "
-        "completa e detalhada, priorizando qualidade sobre velocidade."
+        "Descricao com maximo nivel de detalhe: tipografia, "
+        "espacamentos, cores, layout, posicao de elementos e "
+        "descricao profissional de imagens."
+    )
+    await message.answer(text)
+
+
+@router.message(Command("medio"))
+async def cmd_medium(message: Message) -> None:
+    from bot.handlers.document import user_modes
+    user_modes[message.chat.id] = "medio"
+    text = (
+        "📋 Modo Medio ativado!\n\n"
+        "Texto completo e descricao clara de imagens. "
+        "Ideal para a maioria dos documentos."
+    )
+    await message.answer(text)
+
+
+@router.message(Command("baixo"))
+async def cmd_low(message: Message) -> None:
+    from bot.handlers.document import user_modes
+    user_modes[message.chat.id] = "baixo"
+    text = (
+        "⚡ Modo Baixo ativado!\n\n"
+        "Foco no conteudo: extracao completa de texto e "
+        "descricao concisa de imagens. Mais rapido."
+    )
+    await message.answer(text)
+
+
+@router.message(Command("normal"))
+async def cmd_normal(message: Message) -> None:
+    from bot.handlers.document import user_modes
+    user_modes[message.chat.id] = "medio"
+    text = (
+        "📋 Modo Normal ativado (equivalente ao Medio).\n\n"
+        "Texto completo e descricao clara de imagens."
     )
     await message.answer(text)
 
@@ -148,6 +197,22 @@ async def cmd_cancel(message: Message) -> None:
     for t in tasks:
         state_manager.cancelar(t["task_id"])
     await message.answer(f"✅ {len(tasks)} tarefa(s) cancelada(s).")
+
+
+@router.message(Command("desativar"))
+async def cmd_desativar(message: Message) -> None:
+    from bot.middlewares.pause_middleware import get_paused_chats
+    paused = get_paused_chats()
+    paused.add(message.chat.id)
+    await message.answer("Bot desativado neste chat. Use /ativar para reativar.")
+
+
+@router.message(Command("ativar"))
+async def cmd_ativar(message: Message) -> None:
+    from bot.middlewares.pause_middleware import get_paused_chats
+    paused = get_paused_chats()
+    paused.discard(message.chat.id)
+    await message.answer("Bot reativado! Envie um documento para começar.")
 
 
 @router.message(Command("feedback"))

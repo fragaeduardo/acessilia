@@ -104,6 +104,7 @@ class OpenCodeClient:
         self,
         text: str,
         images: list[bytes] | None = None,
+        max_empty_retries: int = 2,
     ) -> str:
         parts: list[dict] = []
 
@@ -131,7 +132,14 @@ class OpenCodeClient:
         url = f"{self.base_url}/session/{session_id}/message"
         data = await self._post_with_retry(url, payload)
 
-        return self._extract_text(data)
+        result = self._extract_text(data)
+
+        if not result and max_empty_retries > 0:
+            logger.warning("OpenCode returned empty response (session {}), resetting session and retrying...", session_id)
+            self._session_id = None
+            return await self.send_message(text, images, max_empty_retries=max_empty_retries - 1)
+
+        return result
 
     @staticmethod
     def _extract_text(data: dict) -> str:

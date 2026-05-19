@@ -63,7 +63,7 @@ async def process(
         state_manager.atualizar(task_id, etapa="Processando com IA", progresso=0.3)
         state_manager.verificar_cancelamento(task_id)
 
-        resultado = await agente.executar(file_path, file_path.parent, status_callback)
+        resultado = await agente.executar(file_path, file_path.parent, status_callback, mode=mode)
 
         state_manager.verificar_cancelamento(task_id)
         if not resultado.strip():

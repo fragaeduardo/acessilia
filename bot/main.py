@@ -12,6 +12,7 @@ from bot.handlers.errors import router as error_router
 from bot.services.cleanup_service import periodic_cleanup
 from bot.services.history_service import init_db
 from bot.utils.logger import setup_logger, logger
+from bot.middlewares.pause_middleware import PauseMiddleware
 from config.settings import settings
 
 
@@ -34,6 +35,7 @@ def create_bot() -> Bot:
 
 def create_dispatcher() -> Dispatcher:
     dp = Dispatcher(storage=MemoryStorage())
+    dp.message.middleware(PauseMiddleware())
     dp.include_router(start_router)
     dp.include_router(document_router)
     dp.include_router(error_router)

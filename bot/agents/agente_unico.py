@@ -11,13 +11,26 @@ from bot.utils.logger import logger
 from bot.utils.pdf_splitter import split_pdf
 from config.settings import settings
 
-SYSTEM_PROMPT_PATH = Path(__file__).parent.parent.parent / "prompt.txt"
+PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
+
+MODE_MAP = {
+    "detalhado": "detalhado.txt",
+    "medio": "medio.txt",
+    "normal": "medio.txt",
+    "baixo": "baixo.txt",
+    "ocr": "ocr.txt",
+}
 
 
-def _load_system_prompt() -> str:
-    if SYSTEM_PROMPT_PATH.exists():
-        return SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
-    logger.warning("Prompt file not found at {}, using fallback", SYSTEM_PROMPT_PATH)
+def _load_system_prompt(mode: str = "medio") -> str:
+    filename = MODE_MAP.get(mode, "medio.txt")
+    prompt_path = PROMPTS_DIR / filename
+    if prompt_path.exists():
+        return prompt_path.read_text(encoding="utf-8")
+    logger.warning("Prompt file not found at {}, falling back to medio", prompt_path)
+    fallback = PROMPTS_DIR / "medio.txt"
+    if fallback.exists():
+        return fallback.read_text(encoding="utf-8")
     return (
         "Voce e um sistema de acessibilidade digital. Converta as imagens recebidas "
         "em texto acessivel para leitores de tela em portugues brasileiro. "
@@ -65,15 +78,19 @@ def _image_to_jpg(file_path: Path, tmpdir: Path) -> Path:
 class AgenteUnico:
     """Agente unico que processa PDF/imagem pagina por pagina via OpenCode."""
 
-    def __init__(self):
-        self.system_prompt = _load_system_prompt()
+    def __init__(self, mode: str = "medio"):
+        self.mode = mode
+        self.system_prompt = _load_system_prompt(mode)
 
     async def executar(
         self,
         file_path: Path,
         tmpdir: Path,
         status_callback: Callable[[str], Coroutine] | None = None,
+        mode: str | None = None,
     ) -> str:
+        effective_mode = mode or self.mode
+        system_prompt = _load_system_prompt(effective_mode)
         ext = file_path.suffix.lower()
         is_pdf = ext == ".pdf"
 
@@ -118,7 +135,7 @@ class AgenteUnico:
 
                 logger.info("Enviando pagina {} para OpenCode ({} bytes)", page_num, len(jpg_bytes))
 
-                page_prompt = self.system_prompt
+                page_prompt = system_prompt
                 if is_pdf:
                     page_prompt += f"\n\nEste e o documento de {total_pages} paginas. Voce esta processando a pagina {page_num} de {total_pages}."
 
