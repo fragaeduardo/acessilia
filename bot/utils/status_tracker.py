@@ -68,7 +68,7 @@ class StatusTracker:
         else:
             try:
                 await self.bot.edit_message_text(
-                    text, self.chat_id, self.message_id, parse_mode="Markdown"
+                    text, chat_id=self.chat_id, message_id=self.message_id, parse_mode="Markdown"
                 )
             except TelegramAPIError as e:
                 logger.debug("Falha ao editar mensagem de status: {}", e)
@@ -84,7 +84,7 @@ class StatusTracker:
             else:
                 text = f"📄 *{self.filename}*\n\n❌ Erro no processamento."
             await self.bot.edit_message_text(
-                text, self.chat_id, self.message_id, parse_mode="Markdown"
+                text, chat_id=self.chat_id, message_id=self.message_id, parse_mode="Markdown"
             )
         except Exception:
             pass

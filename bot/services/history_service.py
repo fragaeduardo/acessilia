@@ -1,3 +1,4 @@
+import asyncio
 import sqlite3
 import json
 import time
@@ -7,6 +8,9 @@ from bot.utils.logger import logger
 from config.settings import settings
 
 DB_PATH = settings.db_path
+
+_connection: sqlite3.Connection | None = None
+_connection_lock = asyncio.Lock()
 
 
 def _criar_tabelas(conn: sqlite3.Connection) -> None:
@@ -64,28 +68,43 @@ def _criar_tabelas(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def get_connection():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    _criar_tabelas(conn)
-    return conn
+def get_connection() -> sqlite3.Connection:
+    global _connection
+    if _connection is None:
+        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        _criar_tabelas(conn)
+        _connection = conn
+    return _connection
 
 
 def init_db():
+    get_connection()
+
+
+def limpar_orfas():
     conn = get_connection()
-    conn.close()
+    try:
+        conn.execute(
+            "UPDATE conversoes SET status='error', erro='Stale: process interrupted' "
+            "WHERE status='processing' AND criado_em < datetime('now', '-1 hours')"
+        )
+        conn.commit()
+        logger.info("Tarefas orfas limpas")
+    except Exception as e:
+        logger.warning("Falha ao limpar tarefas orfas: {}", e)
 
 
-def registrar_conversao(
+async def registrar_conversao(
     task_id: str,
     arquivo: str,
     extensao: str,
     tamanho_bytes: int = 0,
     modo: str = "normal",
 ):
-    conn = get_connection()
-    try:
+    async with _connection_lock:
+        conn = get_connection()
         conn.execute(
             """INSERT OR IGNORE INTO conversoes
                (task_id, arquivo, extensao, tamanho_bytes, modo)
@@ -93,11 +112,9 @@ def registrar_conversao(
             (task_id, arquivo, extensao, tamanho_bytes, modo),
         )
         conn.commit()
-    finally:
-        conn.close()
 
 
-def finalizar_conversao(
+async def finalizar_conversao(
     task_id: str,
     status: str,
     pipeline: str = "",
@@ -105,8 +122,8 @@ def finalizar_conversao(
     resultado_resumo: str = "",
     tempo_segundos: float = 0,
 ):
-    conn = get_connection()
-    try:
+    async with _connection_lock:
+        conn = get_connection()
         conn.execute(
             """UPDATE conversoes SET
                status = ?, pipeline = ?, erro = ?,
@@ -116,106 +133,88 @@ def finalizar_conversao(
             (status, pipeline, erro, resultado_resumo, tempo_segundos, task_id),
         )
         conn.commit()
-    finally:
-        conn.close()
 
 
-def listar_historico(limite: int = 10) -> list[dict]:
-    conn = get_connection()
-    try:
+async def listar_historico(limite: int = 10) -> list[dict]:
+    async with _connection_lock:
+        conn = get_connection()
         rows = conn.execute(
             """SELECT * FROM conversoes
                ORDER BY criado_em DESC LIMIT ?""",
             (limite,),
         ).fetchall()
         return [dict(r) for r in rows]
-    finally:
-        conn.close()
 
 
-def salvar_ocr_raw(task_id: str, page_number: int, text: str):
-    conn = get_connection()
-    try:
+async def salvar_ocr_raw(task_id: str, page_number: int, text: str):
+    async with _connection_lock:
+        conn = get_connection()
         conn.execute(
             "INSERT INTO ocr_raw (task_id, page_number, text) VALUES (?, ?, ?)",
             (task_id, page_number, text),
         )
         conn.commit()
-    finally:
-        conn.close()
 
 
-def listar_ocr_raw(task_id: str) -> list[dict]:
-    conn = get_connection()
-    try:
+async def listar_ocr_raw(task_id: str) -> list[dict]:
+    async with _connection_lock:
+        conn = get_connection()
         rows = conn.execute(
             "SELECT * FROM ocr_raw WHERE task_id = ? ORDER BY page_number", (task_id,)
         ).fetchall()
         return [dict(r) for r in rows]
-    finally:
-        conn.close()
 
 
-def salvar_ocr_revised(task_id: str, page_number: int, text: str, modelo: str = "qwen2.5:3b"):
-    conn = get_connection()
-    try:
+async def salvar_ocr_revised(task_id: str, page_number: int, text: str, modelo: str = "qwen2.5:3b"):
+    async with _connection_lock:
+        conn = get_connection()
         conn.execute(
             "INSERT INTO ocr_revised (task_id, page_number, text, modelo) VALUES (?, ?, ?, ?)",
             (task_id, page_number, text, modelo),
         )
         conn.commit()
-    finally:
-        conn.close()
 
 
-def listar_ocr_revised(task_id: str) -> list[dict]:
-    conn = get_connection()
-    try:
+async def listar_ocr_revised(task_id: str) -> list[dict]:
+    async with _connection_lock:
+        conn = get_connection()
         rows = conn.execute(
             "SELECT * FROM ocr_revised WHERE task_id = ? ORDER BY page_number", (task_id,)
         ).fetchall()
         return [dict(r) for r in rows]
-    finally:
-        conn.close()
 
 
-def salvar_ocr_translated(task_id: str, page_number: int, text: str, modelo: str = "qwen2.5:1.5b"):
-    conn = get_connection()
-    try:
+async def salvar_ocr_translated(task_id: str, page_number: int, text: str, modelo: str = "qwen2.5:1.5b"):
+    async with _connection_lock:
+        conn = get_connection()
         conn.execute(
             "INSERT INTO ocr_translated (task_id, page_number, text, modelo) VALUES (?, ?, ?, ?)",
             (task_id, page_number, text, modelo),
         )
         conn.commit()
-    finally:
-        conn.close()
 
 
-def listar_ocr_translated(task_id: str) -> list[dict]:
-    conn = get_connection()
-    try:
+async def listar_ocr_translated(task_id: str) -> list[dict]:
+    async with _connection_lock:
+        conn = get_connection()
         rows = conn.execute(
             "SELECT * FROM ocr_translated WHERE task_id = ? ORDER BY page_number", (task_id,)
         ).fetchall()
         return [dict(r) for r in rows]
-    finally:
-        conn.close()
 
 
-def limpar_ocr_data(task_id: str):
-    conn = get_connection()
-    try:
+async def limpar_ocr_data(task_id: str):
+    async with _connection_lock:
+        conn = get_connection()
         conn.execute("DELETE FROM ocr_raw WHERE task_id = ?", (task_id,))
         conn.execute("DELETE FROM ocr_revised WHERE task_id = ?", (task_id,))
         conn.execute("DELETE FROM ocr_translated WHERE task_id = ?", (task_id,))
         conn.commit()
-    finally:
-        conn.close()
 
 
-def estatisticas() -> dict:
-    conn = get_connection()
-    try:
+async def estatisticas() -> dict:
+    async with _connection_lock:
+        conn = get_connection()
         total = conn.execute("SELECT COUNT(*) FROM conversoes").fetchone()[0]
         sucesso = conn.execute(
             "SELECT COUNT(*) FROM conversoes WHERE status='done'"
@@ -232,5 +231,3 @@ def estatisticas() -> dict:
             "erros": erros,
             "tempo_medio_segundos": round(tempo_medio, 1),
         }
-    finally:
-        conn.close()

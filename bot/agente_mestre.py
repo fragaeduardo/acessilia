@@ -6,7 +6,7 @@ from typing import Callable, Coroutine
 from bot.agents.agente_unico import AgenteUnico
 from bot.agents.state_manager import TaskCancelledError, state_manager
 from bot.services.cache import get_cached, set_cache
-from bot.services.history_service import finalizar_conversao, registrar_conversao
+from bot.services.history_service import finalizar_conversao, limpar_orfas, registrar_conversao
 from bot.services.queue_service import QueueItem, processing_queue
 from bot.utils.logger import logger
 
@@ -15,19 +15,7 @@ CACHE_VERSION = "opencode-v1"
 
 
 def _limpar_tarefas_orfas():
-    try:
-        from bot.services.history_service import get_connection
-
-        conn = get_connection()
-        conn.execute(
-            "UPDATE conversoes SET status='error', erro='Stale: process interrupted' "
-            "WHERE status='processing' AND criado_em < datetime('now', '-1 hours')"
-        )
-        conn.commit()
-        conn.close()
-        logger.info("Tarefas orfas limpas")
-    except Exception as e:
-        logger.warning("Falha ao limpar tarefas orfas: {}", e)
+    limpar_orfas()
 
 
 _limpar_tarefas_orfas()
@@ -38,14 +26,14 @@ async def process(
     status_callback: Callable[[str], Coroutine] | None = None,
     mode: str = "normal",
 ) -> str:
-    cached = get_cached(file_path, CACHE_VERSION)
+    cached = await get_cached(file_path, CACHE_VERSION)
     if cached is not None:
         logger.info("Cache hit para {}", file_path.name)
         return cached
 
     task_id = state_manager.criar_tarefa(file_path)
     inicio = time.time()
-    registrar_conversao(
+    await registrar_conversao(
         task_id=task_id,
         arquivo=file_path.name,
         extensao=file_path.suffix,
@@ -70,9 +58,9 @@ async def process(
             raise RuntimeError("Resposta vazia do agente")
 
         state_manager.finalizar(task_id, resultado)
-        set_cache(file_path, resultado, CACHE_VERSION)
+        await set_cache(file_path, resultado, CACHE_VERSION)
 
-        finalizar_conversao(
+        await finalizar_conversao(
             task_id=task_id,
             status="done",
             pipeline="opencode-unico",
@@ -86,7 +74,7 @@ async def process(
 
     except TaskCancelledError:
         logger.info("Tarefa {} cancelada pelo usuario", task_id)
-        finalizar_conversao(
+        await finalizar_conversao(
             task_id=task_id,
             status="cancelled",
             erro="Cancelado pelo usuario",
@@ -99,9 +87,9 @@ async def process(
         state_manager.errar(task_id, str(e))
         fallback = _fallback_texto_simples(file_path)
         state_manager.atualizar(task_id, resultado=fallback)
-        set_cache(file_path, fallback, CACHE_VERSION)
+        await set_cache(file_path, fallback, CACHE_VERSION)
 
-        finalizar_conversao(
+        await finalizar_conversao(
             task_id=task_id,
             status="error",
             erro=str(e),

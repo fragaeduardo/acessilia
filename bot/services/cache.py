@@ -4,6 +4,9 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import aiofiles
+import aiofiles.os
+
 from bot.utils.logger import logger
 
 CACHE_DIR = Path("temp/cache")
@@ -30,42 +33,51 @@ def _cache_path(key: str) -> Path:
     return CACHE_DIR / f"{key}.json"
 
 
-def get_cached(path: Path, extra: str = "", ttl: int = 3600) -> Optional[str]:
+async def get_cached(path: Path, extra: str = "", ttl: int = 3600) -> Optional[str]:
     _ensure_cache_dir()
     key = _cache_key(path, extra)
     cp = _cache_path(key)
-    if not cp.exists():
+    try:
+        async with aiofiles.open(str(cp), "r", encoding="utf-8") as f:
+            content = await f.read()
+    except FileNotFoundError:
+        return None
+    except Exception:
         return None
     try:
-        data = json.loads(cp.read_text(encoding="utf-8"))
+        data = json.loads(content)
         if time.time() - data["timestamp"] > ttl:
-            cp.unlink(missing_ok=True)
+            await aiofiles.os.remove(str(cp))
             return None
         logger.debug("Cache hit: {}", key)
         return data["text"]
     except Exception:
-        cp.unlink(missing_ok=True)
+        try:
+            await aiofiles.os.remove(str(cp))
+        except OSError:
+            pass
         return None
 
 
-def set_cache(path: Path, text: str, extra: str = "") -> None:
+async def set_cache(path: Path, text: str, extra: str = "") -> None:
     _ensure_cache_dir()
     key = _cache_key(path, extra)
     cp = _cache_path(key)
     try:
         data = {"timestamp": time.time(), "text": text}
-        cp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        async with aiofiles.open(str(cp), "w", encoding="utf-8") as f:
+            await f.write(json.dumps(data, ensure_ascii=False))
         logger.debug("Cache set: {}", key)
     except Exception as e:
         logger.warning("Falha ao salvar cache: {}", e)
 
 
-def clear_cache() -> int:
+async def clear_cache() -> int:
     _ensure_cache_dir()
     count = 0
     for f in CACHE_DIR.iterdir():
         if f.suffix == ".json":
-            f.unlink()
+            await aiofiles.os.remove(str(f))
             count += 1
     logger.info("Cache limpo: {} arquivos removidos", count)
     return count
