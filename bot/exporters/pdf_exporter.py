@@ -123,11 +123,49 @@ def export_pdf(
         elements.append(PageBreak())
 
     def md_to_xml(txt):
-        """Converte Markdown básico para tags XML do ReportLab."""
-        txt = re.sub(r"\*\*\*(.*?)\*\*\*", r"<b><i>\1</i></b>", txt)
-        txt = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", txt)
-        txt = re.sub(r"\*(.*?)\*", r"<i>\1</i>", txt)
-        return txt
+        """Converte Markdown para XML do ReportLab com aninhamento correto (stack-based)."""
+        # Remove lixo de conversação
+        txt = re.sub(r"\[.*?Deseja que eu corrija.*?\]", "", txt, flags=re.IGNORECASE)
+        txt = re.sub(r"Deseja que eu corrija.*?\?", "", txt, flags=re.IGNORECASE)
+
+        # Fila de tokens Markdown
+        # Regex para achar tags de bold/italic
+        parts = re.split(r"(\*\*\*|\*\*|\*)", txt)
+        
+        stack = []
+        result = []
+        
+        for part in parts:
+            if part == '***':
+                if 'i' in stack and 'b' in stack: # Fecha ambos
+                    result.append("</i></b>")
+                    stack.remove('i'); stack.remove('b')
+                else: # Abre ambos
+                    result.append("<b><i>")
+                    stack.append('b'); stack.append('i')
+            elif part == '**':
+                if 'b' in stack:
+                    result.append("</b>")
+                    stack.remove('b')
+                else:
+                    result.append("<b>")
+                    stack.append('b')
+            elif part == '*':
+                if 'i' in stack:
+                    result.append("</i>")
+                    stack.remove('i')
+                else:
+                    result.append("<i>")
+                    stack.append('i')
+            else:
+                result.append(part)
+        
+        # Fecha o que sobrou na pilha (ordem inversa)
+        for tag in reversed(stack):
+            result.append(f"</{tag}>")
+            
+        final_txt = "".join(result)
+        return final_txt.replace("<br>", "<br/>")
 
     current_list_items = []
     list_type = None
