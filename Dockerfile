@@ -34,5 +34,5 @@ EXPOSE 8000
 
 # Definir ponto de entrada
 
-VOLUME /app/output
+VOLUME /app/data /app/logs /app/output /app/temp
 CMD ["python", "run.py", "--host", "0.0.0.0", "--port", "8000"]

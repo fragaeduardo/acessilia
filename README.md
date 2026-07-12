@@ -23,15 +23,32 @@ poetry run acessilia   # executa a CLI / inicia as interfaces habilitadas
 ```
 
 ### Usando Docker
+
 ```bash
 # Build da imagem Docker (executar na raiz do projeto)
 docker build -t acessilia:latest .
 
-# Executar o container, expondo a porta 8000 (FastAPI) e montando um volume para persistir arquivos de saída
-docker run -d -p 8000:8000 -v $(pwd)/output:/app/output --name acessilia-instance acessilia:latest
+# Executar o container com todos os volumes necessários para persistência
+docker run -d -p 8000:8000 \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/logs:/app/logs \
+  -v $(pwd)/output:/app/output \
+  -v $(pwd)/temp:/app/temp \
+  --name acessilia-instance acessilia:latest
 ```
 
 Acesse a aplicação em `http://localhost:8000/`.
+
+**Volumes montados e sua finalidade:**
+
+| Diretório no host | Caminho no container | Conteúdo persistido |
+|---|---|---|
+| `./data` | `/app/data` | Banco SQLite (`history.db`) — histórico de conversões, OCR e tokens de download |
+| `./logs` | `/app/logs` | Logs diários com rotação automática (retenção de 30 dias) |
+| `./output` | `/app/output` | JSON canônico de cada documento processado |
+| `./temp` | `/app/temp` | Cache de processamento AI, arquivos exportados (txt, docx, pdf, html, mp3, zip), uploads e feedback |
+
+> **Nota:** `./data` e `./temp` são críticos para persistência. Sem eles, o banco de histórico e todos os arquivos gerados para download são perdidos ao reiniciar o container.
 
 ## Execução
 
