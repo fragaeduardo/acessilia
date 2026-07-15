@@ -2,7 +2,7 @@ import edge_tts
 import asyncio
 from pathlib import Path
 from typing import Callable, Coroutine
-from core.utils.logger import logger
+from core.tools.logger import logger
 
 
 async def export_mp3(

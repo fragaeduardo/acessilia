@@ -11,7 +11,7 @@ from interfaces.telegram.handlers.document import router as document_router
 from interfaces.telegram.handlers.errors import router as error_router
 from core.services.cleanup_service import periodic_cleanup
 from core.services.history_service import init_db
-from core.utils.logger import setup_logger, logger
+from core.tools.logger import setup_logger, logger
 from interfaces.telegram.middlewares.pause_middleware import PauseMiddleware
 from config.settings import settings
 

@@ -1,7 +1,7 @@
 import re
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
-from core.utils.logger import logger
+from core.tools.logger import logger
 
 
 class StatusTracker:

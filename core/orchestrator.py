@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Coroutine
 
-from core.agents.agente_unico import AgenteUnico
+from core.agents.team import AccessibilityOrchestrator
 from core.agents.state_manager import TaskCancelledError, state_manager
 from core.services.cache import get_cached, set_cache
 from core.services.history_service import (
@@ -13,12 +13,12 @@ from core.services.history_service import (
     registrar_conversao,
 )
 from config.settings import settings
-from core.utils.logger import logger
-from core.utils.text_processor import merge_broken_paragraphs
+from core.tools.logger import logger
+from core.tools.text_processor import merge_broken_paragraphs
 from pipeline.canonical_builder import build_canonical_document
 from pipeline.verbosity_manager import verbosity_for_mode
 
-agente = AgenteUnico()
+agente = AccessibilityOrchestrator()
 
 
 def _cache_version() -> str:

@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 
-from core.utils.logger import setup_logger, logger
+from core.tools.logger import setup_logger, logger
 from config.settings import settings
 
 LOCK_FILE = os.path.join(os.path.dirname(__file__), "bot.lock")
@@ -93,20 +93,6 @@ async def startup():
     await asyncio.gather(*tasks)
 
 
-async def _cleanup_http_clients():
-    from core.ai.ollama import client as ollama_cli
-    from core.ai.openrouter import client as or_cli
-
-    try:
-        await ollama_cli.close()
-    except Exception:
-        pass
-    try:
-        await or_cli.close()
-    except Exception:
-        pass
-
-
 def main():
     acquire_lock()
     try:
@@ -118,10 +104,6 @@ def main():
         sys.exit(1)
     finally:
         release_lock()
-        try:
-            asyncio.run(_cleanup_http_clients())
-        except Exception:
-            pass
 
 if __name__ == "__main__":
     main()

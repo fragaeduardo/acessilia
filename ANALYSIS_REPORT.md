@@ -80,7 +80,7 @@ FastAPI Web  <--->  interfaces/web/app.py
 | Impacto | Achado | Sugestão de correção |
 |---|---|---|
 | **Alto** | *Ausência de testes de integração* que exercitem o fluxo completo da fila ao exportador. | Criar testes de integração que enviem um PDF de exemplo através da fila e verifiquem a geração de todos os formatos. |
-| **Alto** | *Validação de arquivos* limitada ao tamanho e extensão; falta de verificação de MIME e sanitização de nomes. | Expandir `core.utils.validators.validate_file` para validar MIME via `python-magic` e sanitizar nomes de arquivo antes de salvar. |
+| **Alto** | *Validação de arquivos* limitada ao tamanho e extensão; falta de verificação de MIME e sanitização de nomes. | Expandir `core.tools.validators.validate_file` para validar MIME via `python-magic` e sanitizar nomes de arquivo antes de salvar. |
 | **Médio** | *Duplicação de lógica* entre `exporters/pandoc_exporter.py` e renderizadores nativos (ex.: `render_html`). | Unificar via um wrapper que decide dinamicamente usar Pandoc ou renderizador interno conforme disponibilidade. |
 | **Médio** | *Log de auditoria* apenas escrito em arquivos de texto; não há integração com sistemas de monitoramento. | Integrar logger ao serviço de observabilidade (ex.: Sentry ou CloudWatch) usando `structlog`. |
 | **Baixo** | *Dependência de Pandoc* sem fallback claro quando o binário não está instalado. | Detectar ausência de Pandoc na fase de inicialização e desabilitar formatos que dependem dele, avisando o usuário. |

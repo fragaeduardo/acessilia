@@ -7,4 +7,12 @@ commit_changes.py
 .env
 report.txt
 
-.env
+# Python cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+output/

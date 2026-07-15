@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from core.utils.logger import logger
+from core.tools.logger import logger
 from exporters.pandoc_exporter import export_accessible_document
 
 

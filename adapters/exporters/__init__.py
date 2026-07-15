@@ -7,8 +7,8 @@ instead of importing ``core.exporters`` directly.
 
 from pathlib import Path
 from typing import Mapping, Any
-from core.utils.logger import logger
-from core.utils.logger import logger
+from core.tools.logger import logger
+from core.tools.logger import logger
 
 # Import the legacy implementation functions
 from core.exporters.txt_exporter import export_txt as _export_txt

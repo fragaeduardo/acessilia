@@ -1,6 +1,6 @@
 import asyncio
 import sqlite3
-from core.utils.logger import logger
+from core.tools.logger import logger
 from config.settings import settings
 
 DB_PATH = settings.db_path

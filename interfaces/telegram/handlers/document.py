@@ -15,8 +15,8 @@ from core.orchestrator import process
 
 
 
-from core.utils.logger import logger
-from core.utils.validators import validate_file
+from core.tools.logger import logger
+from core.tools.validators import validate_file
 from interfaces.telegram.adapters.status_tracker import StatusTracker
 from exporters.pandoc_exporter import export_accessible_document
 from config.settings import settings

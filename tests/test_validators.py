@@ -1,4 +1,4 @@
-from core.utils.validators import (
+from core.tools.validators import (
     is_extension_allowed,
     is_file_size_allowed,
     validate_file,

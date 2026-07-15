@@ -12,7 +12,7 @@ from aiogram.types import Message
 from config.settings import settings
 from core.agents.state_manager import state_manager
 from core.services.cache import clear_cache
-from core.utils.logger import logger
+from core.tools.logger import logger
 from interfaces.telegram.handlers.document import user_modes, user_emails
 from interfaces.telegram.middlewares.pause_middleware import get_paused_chats
 

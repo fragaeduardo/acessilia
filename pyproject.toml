@@ -32,6 +32,13 @@ docling = "*"
 rapidocr = "*"
 slowapi = "*"
 python-multipart = "*"
+agno = "*"
+openai = "^2.45.0"
+ollama = "^0.6.2"
+pytest = "^9.1.1"
+respx = "^0.23.1"
+pytest-asyncio = "^1.4.0"
+
 
 [tool.poetry.scripts]
 bot-acess = "interfaces.cli.run:main"

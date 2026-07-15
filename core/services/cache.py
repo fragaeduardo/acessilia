@@ -7,7 +7,7 @@ from typing import Any
 import aiofiles
 import aiofiles.os
 
-from core.utils.logger import logger
+from core.tools.logger import logger
 
 CACHE_DIR = Path("temp/cache")
 

@@ -26,7 +26,7 @@ from core.orchestrator import process
 
 
 from adapters.exporters import export_txt, export_docx, export_pdf, export_mp3
-from core.utils.logger import logger
+from core.tools.logger import logger
 from exporters.pandoc_exporter import export_accessible_document
 from config.settings import settings
 from core.services.email_service import send_confirmation_email, send_result_email

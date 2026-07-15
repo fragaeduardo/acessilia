@@ -3,7 +3,7 @@ from pathlib import Path
 from aiogram import Bot
 from aiogram.types import FSInputFile
 
-from core.utils.logger import logger
+from core.tools.logger import logger
 
 
 async def download_file(bot: Bot, file_id: str, destination: Path) -> Path:

@@ -1,7 +1,7 @@
 import aiosmtplib
 from email.message import EmailMessage
 from pathlib import Path
-from core.utils.logger import logger
+from core.tools.logger import logger
 from config.settings import settings
 
 
