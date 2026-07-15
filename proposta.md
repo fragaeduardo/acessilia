@@ -125,9 +125,7 @@ core/
 │   ├── team.py                 # Orquestrador assíncrono (AccessibilityOrchestrator)
 │   └── types.py                # Definições de tipos comuns (RegionTask)
 ├── models/
-│   ├── ai_client.py            # Inicializador unificado dos modelos do Agno
-│   ├── ollama.py               # Cliente HTTP customizado (usado em testes/legados)
-│   └── openrouter.py           # Cliente HTTP customizado (usado em testes/legados)
+│   └── ai_client.py            # Inicializador unificado dos modelos do Agno
 ├── prompts/                    # Arquivos markdown de prompts especializados
 └── tools/                      # Ferramentas utilitárias (imagens, textos, PDF, OCR)
 ```
