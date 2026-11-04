@@ -240,6 +240,10 @@ EXEMPT_STRINGS: list[tuple[str, str]] = [
     # Preserve pre-existing operator-facing pipeline messages unchanged.
     ("backend/core/orchestration/pipeline.py", "replanejando"),
     ("backend/core/orchestration/pipeline.py", "concluindo com obrigações"),
+    # Existing human-facing handler results, moved without translation.
+    ("backend/core/execution/handlers/vision_description.py", "Nenhuma imagem encontrada para a obrigação"),
+    ("backend/core/execution/handlers/vision_description.py", "Imagem sem descrição textual: "),
+    ("backend/core/execution/handlers/vision_description.py", "Descrição validada para {len(elements)} imagem(ns)"),
     # Existing user-visible strings relocated into dedicated execution modules.
     ("backend/core/execution/handlers/common.py", "Obrigação não encontrada:"),
     ("backend/core/execution/handlers/common.py", "Escalonado para revisão humana:"),
