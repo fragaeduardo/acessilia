@@ -39,6 +39,14 @@ jobs:
           python -m pytest -q -m "not e2e" \
             tests/test_planning_proposals.py \
             tests/test_planning_coordinator.py \
+            tests/test_planning_analyzer_registry.py \
+            tests/test_execution_binding_contracts.py \
+            tests/test_stage1_golden_parity.py \
+            tests/test_formula_recognition.py \
+            tests/test_formula_classification.py \
+            tests/test_region_inspection.py \
+            tests/test_provider_choice_methods.py \
+            tests/test_vision_provider_breaker.py \
             tests/test_pddl_modularization_contract.py \
             tests/test_formula_enrichment.py \
             tests/test_media_inspect.py \

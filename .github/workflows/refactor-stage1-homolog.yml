@@ -1,0 +1,76 @@
+name: Stage 1 homologation E2E (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_homologation:
+        description: "Run against the HOMOLOGATION Toolbox only"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage1-homolog-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-homolog:
+    if: github.ref == 'refs/heads/refactor/etapa-1-orchestrator-planner' && inputs.confirm_homologation
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TOOLBOX_BASE_URL: ${{ secrets.ACESSILIA_HOMOLOG_TOOLBOX_URL }}
+      TOOLBOX_API_KEY: ${{ secrets.ACESSILIA_HOMOLOG_TOOLBOX_KEY }}
+      TOOLBOX_BASE_URLS: ""
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.11"
+      - name: Require explicit homologation credentials and network access
+        shell: bash
+        run: |
+          test -n "$TOOLBOX_BASE_URL" || { echo "Missing HOMOLOG Toolbox URL"; exit 1; }
+          test -n "$TOOLBOX_API_KEY" || { echo "Missing HOMOLOG Toolbox key"; exit 1; }
+          python - <<'PY'
+          import os
+          from urllib.parse import urlparse
+          url = os.environ["TOOLBOX_BASE_URL"]
+          parsed = urlparse(url)
+          if parsed.scheme != "https" or not parsed.hostname:
+              raise SystemExit("HOMOLOG Toolbox URL must be a valid HTTPS endpoint")
+          PY
+          curl --fail --silent --show-error --max-time 15 "$TOOLBOX_BASE_URL/v1/health" >/dev/null
+      - name: Install Core and SDK dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ./libs/docstruct --no-cache-dir
+          python -m pip install "./libs/sdk[dev]" --no-cache-dir
+          python -m pip install ".[dev]" --no-cache-dir
+      - name: Real Toolbox render, mathematics and dual fusion
+        run: |
+          python -m pytest -q -m e2e --junitxml=homolog-results.xml \
+            tests/test_toolbox_e2e.py::TestPdfClientE2E::test_render_page \
+            tests/test_toolbox_e2e.py::TestMathClientE2E::test_convert_latex_to_mathml \
+            tests/test_toolbox_e2e.py::TestMathClientE2E::test_verbalize_latex \
+            tests/test_fusion_e2e.py::test_extract_fused_against_real_toolbox \
+            tests/test_fusion_e2e.py::test_fusion_handler_with_real_toolbox
+      - name: Reject skipped E2E tests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree
+          report = ElementTree.parse(Path("homolog-results.xml"))
+          tests = report.findall(".//testcase")
+          skipped = report.findall(".//skipped")
+          if len(tests) != 5 or skipped:
+              raise SystemExit(
+                  f"HOMOLOG E2E did not execute all five contracts: "
+                  f"{len(tests)} cases, {len(skipped)} skipped"
+              )
+          PY

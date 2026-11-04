@@ -119,3 +119,77 @@ Toolbox/homologação nem benchmarking de modelos.
   metadados serializados (1H/1I).
 
 Não avançar para etapas posteriores, merge ou PR sem esses gates.
+
+
+---
+
+## Auditoria de encerramento do código da Etapa 1 — branch isolada
+
+**Base:** `A11yDevs/acessilia@develop:06d1453`.
+**Destino:** `fragaeduardo/acessilia@refactor/etapa-1-orchestrator-planner`.
+**Regra:** sem PR, merge, deploy ou mutações na organização.
+
+### 1A–1J: código e provas
+
+| Item | Implementação | Validação possível nesta branch |
+| --- | --- | --- |
+| 1A — caracterização | `test_stage1_golden_parity.py`; golden tests existentes de PDDL/manifesto | Core completo, sem E2E |
+| 1B — extração | `core/orchestration/pipeline.py`, `manifest/preprocessing/*`, `manifest/payload*.py`, `execution/handlers/*` | todos os testes Core não E2E |
+| 1C — propostas | `hierarchy/proposals.py`, `global_planner.py`; índice de evidências, deduplicação e DAG iterativo | `test_planning_proposals.py` |
+| 1D — analisadores | `planning/universal/{structure,text,image,table,formula_code}.py` e `hierarchy/registry.py`; slots `specialists/registry.py` **inativos** sem detector/binding/validador | `test_planning_analyzer_registry.py` |
+| 1E — PDDL único | `planning/coordinator.py` delega ao `PlannerAgent` existente, sem outro solver | `test_planning_coordinator.py`; golden |
+| 1F — binding | `hierarchy/bindings.py` usa `MethodRegistry`, `TOOLBOX_CAPABILITIES`, provider e output schema reais | `test_execution_binding_contracts.py` |
+| 1G — catálogo | `toolbox_gate.py` com `observe/enforce/off` incluindo `math.convert` e `math.verbalize` | `test_toolbox_availability_gate.py`; remoto ainda pendente |
+| 1H — versões | domínios v2.2/v2.3 e `PlannerAgent` não alterados | hash e passos do plano comparados ao original |
+| 1I — ambientes/VLM | SDK e settings continuam selecionando os endpoints da Toolbox configurada; módulos extraídos não criam rota direta ao servidor VLM | testes de configuração; isolamento real de PROD/HOMOL pendente |
+| 1J — modularização | handlers de visão, Unicode, texto, inspeção de regiões, adjudicação VLM, fusão dual/single, pré-processamento e saída separados; facade mantém wrappers injetáveis | `test_pddl_modularization_contract.py` e Core completo |
+
+### Estrutura de fronteiras relevantes
+
+```text
+backend/
+├── agents/pddl_orchestrator.py           # somente facade, registro e compatibilidade
+└── core/
+    ├── orchestration/
+    │   ├── pipeline.py                   # sequenciamento original
+    │   └── reporting.py                  # progresso e disponibilidade
+    ├── planning/
+    │   ├── coordinator.py                # planner PDDL existente, único
+    │   ├── hierarchy/                    # proposals, registry, global_planner, bindings
+    │   ├── universal/                    # structure, text, image, table, formula_code
+    │   └── specialists/                  # slots com gates, sem provider fictício
+    ├── manifest/
+    │   ├── preprocessing/                # triage, media, fórmulas, imagens, tabelas,
+    │   │                                 # regiões, retry, page limit e sinais
+    │   ├── table_reading.py              # AST e validação
+    │   ├── element_geometry.py           # bbox, papéis e overlays
+    │   └── payload*.py                   # blocos, listas, texto e saída canônica
+    └── execution/
+        ├── recovery.py                   # replan e obrigações
+        └── handlers/                     # math, text, Unicode, region, vision,
+                                          # fusion_execution e fusion_selection
+```
+
+### Evidência de regressão offline
+
+Execução completa no fork, commit **`7f55f319c094a43be1258da0f0bd8ec0757e837e`**:
+
+- 236 testes focados aprovados;
+- 2.329 testes do Core aprovados (60 E2E desmarcados);
+- 980 testes de `docstruct` aprovados;
+- 266 testes do SDK aprovados.
+
+Log: https://github.com/fragaeduardo/acessilia/actions/runs/41766668018
+
+Esses resultados **não substituem homologação real**. O gate remoto é
+`.github/workflows/refactor-stage1-homolog.yml`, acionado manualmente
+no fork, com `ACESSILIA_HOMOLOG_TOOLBOX_URL` e
+`ACESSILIA_HOMOLOG_TOOLBOX_KEY` configurados como GitHub Actions Secrets.
+O workflow falha se o serviço não estiver acessível ou os testes forem
+ignorados; nunca consulta PROD como alternativa.
+
+**Critério para declarar 100% validada:** executar sem falhas o gate de
+homologação contra o par Core/Toolbox e a VLM de homologação, além de
+comparar resultados reais de PDF, apresentação e falhas com o baseline 0.2.0.
+Antes disso, afirmar "100%" seria incorreto.
+
