@@ -237,6 +237,9 @@ EXEMPT_STRINGS: list[tuple[str, str]] = [
     ("libs/docstruct/tests/test_unicode_repair.py", "à"),
     ("tests/test_legacy_unicode_repair.py", "à medida"),
     ("docs/docstruct_algorithms.md", "→ `à`"),
+    # Preserve pre-existing operator-facing pipeline messages unchanged.
+    ("backend/core/orchestration/pipeline.py", "replanejando"),
+    ("backend/core/orchestration/pipeline.py", "concluindo com obrigações"),
     # Existing user-visible strings relocated into dedicated execution modules.
     ("backend/core/execution/handlers/common.py", "Obrigação não encontrada:"),
     ("backend/core/execution/handlers/common.py", "Escalonado para revisão humana:"),
