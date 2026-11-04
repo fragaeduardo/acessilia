@@ -10,10 +10,9 @@ from __future__ import annotations
 from collections import Counter
 from pathlib import Path
 from typing import Any
-import re
 
 from docstruct.blocks.callouts import dedupe_callout_titles as _dedupe_callout_titles
-from docstruct.blocks.lists import item_label, list_numbering, list_start, marker_numbering
+from docstruct.blocks.lists import marker_numbering
 from docstruct.fusion.similarity import PAGENUM_RE
 from docstruct.fusion.tailjoin import is_page_number as _is_page_number
 from docstruct.geometry import reading_role
