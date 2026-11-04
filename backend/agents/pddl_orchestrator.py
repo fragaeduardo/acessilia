@@ -14,22 +14,12 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-from docstruct.blocks.callouts import dedupe_callout_titles as _dedupe_callout_titles
-from docstruct.blocks.lists import item_label, list_numbering, list_start, marker_numbering
-from docstruct.fusion.similarity import PAGENUM_RE
 from docstruct.fusion.tailjoin import is_page_number as _is_page_number
-from docstruct.geometry import reading_role
 from docstruct.tables.ast import (
-    effective_section_width,
-    linearize_table_for_text,
     raw_rows_from_table_ast as _rows_from_table_ast,
 )
 from docstruct.tables.garble import table_garble_reason
 from docstruct.text.equations import preserve_equation_number, split_equation_number
-from docstruct.text.implicit_products import (
-    implicit_product_variables,
-    mark_implicit_products,
-)
 from docstruct.text.inline_math import (
     InlineMathDetection,
     TextSpan,
@@ -38,8 +28,7 @@ from docstruct.text.inline_math import (
     splice_inline_math,
 )
 from docstruct.text.latex import has_latex_markup, latex_text_agreement
-from docstruct.text.math_spans import block_prose, inline_math_sources, mask_inline_math
-from docstruct.text.norm_fix import norm_fix
+from docstruct.text.math_spans import mask_inline_math
 from docstruct.text.negation_overlay import (
     compose_negation,
     is_detached_overlay,
@@ -63,11 +52,9 @@ from backend.core.agents.fusion_agent import FusionAgent
 from backend.core.agents.informational_structural import InformationalStructuralAgent
 from backend.core.execution.executor import ExecutorAgent, MethodRegistry, StepProgress
 from backend.core.execution.models import ExecutionReport, MethodResult
-from backend.core.execution.messages import EXE_COMPLETED_OBLIGATIONS_UNSATISFIED
 from backend.core.manifest.builder import (
     SECONDARY_EXTRACTION_KIND,
     TYPE_BOUND_V23_KINDS,
-    _derive_processing_needs,
     is_unstructured_page_placeholder,
     reconcile_reclassified_element_processing_needs,
     separate_equation_number,
@@ -76,7 +63,6 @@ from backend.core.manifest.builder import (
 from backend.core.manifest.models import (
     Artifact,
     ManifestElement,
-    Obligation,
     PageDescriptor,
     ProcessingManifest,
     is_bottom_left,
@@ -87,11 +73,9 @@ from backend.core.planning.models import NominalPlan, PlanningComparison, PlanSt
 from backend.core.planning import toolbox_gate
 from backend.core.planning.planner_agent import PlannerAgent
 from backend.core.planning.coordinator import build_nominal_plan, unavailable_methods
-from backend.i18n import locale_for_user, n, reset_request_locale, set_request_locale, t
+from backend.i18n import n, t
 from backend.log_messages import (
-    LOG_MEDIA_INSPECT_FAILED,
     LOG_PDDL_ELEMENT_CROP_FAILED,
-    LOG_PDDL_EMPTY_LIST_ITEMS_DROPPED,
     LOG_PDDL_EMPTY_VISION_DESCRIPTION,
     LOG_PDDL_FORMULA_RECOGNIZE_EMPTY,
     LOG_PDDL_FORMULA_RECOGNIZE_UNAVAILABLE,
@@ -99,14 +83,12 @@ from backend.log_messages import (
     LOG_PDDL_FORMULAS_FELL_BACK_TO_VISION,
     LOG_PDDL_FORMULAS_RECOGNIZED,
     LOG_PDDL_IMAGES_ENRICHED,
-    LOG_PDDL_PREFERRED_PLAN_MISSING,
     LOG_PDDL_TABLES_ENRICHED,
     LOG_PDDL_VISION_RETRY_PASS_PICTURES,
     LOG_PDDL_VISION_RETRY_PASS_TABLES,
     LOG_PDDL_TABLE_REREAD_ACCEPTED,
     LOG_PDDL_TABLE_REREAD_REJECTED,
     LOG_VISION_ELEMENT_DESCRIPTION,
-    MSG_STRUCTURAL_EXTRACTION_DEGRADED,
 )
 from backend.stage_messages import (
     STAGE_ANALYZING_STRUCTURAL,
@@ -122,22 +104,12 @@ from backend.stage_messages import (
     STAGE_RECOGNIZING_FORMULA,
     STAGE_RECOGNIZING_TABLE,
     STAGE_EXECUTING_PLAN_STEP,
-    STAGE_PAGE,
-    STAGE_PAGE_OF,
-    STAGE_PAGES,
-    STAGE_PAGE_UNKNOWN,
 )
-from backend.tools.code_tools import normalize_code_text
-from backend.tools.formula_tools import label_spoken_formula, normalize_latex
+from backend.tools.formula_tools import normalize_latex
 from backend.tools.logger import logger
-from backend.tools.media_inspect import inspect_source_media
 from backend.tools.toolbox_math_tools import (
-    MSG_MATHML_UNAVAILABLE,
-    MSG_SPEECH_UNAVAILABLE,
     MathCapabilityUnavailable,
-    toolbox_convert_latex,
     toolbox_recognize_formula,
-    toolbox_verbalize_latex,
 )
 from backend.tools.toolbox_client import ToolboxError
 
