@@ -251,3 +251,6 @@ def _table_ast_from_rows(rows: list[list[str]]) -> dict[str, Any]:
         if cells:
             body.append({"cells": cells})
     return {"body": body}
+
+
+_TABLE_SECTIONS = ("header", "body", "footer")

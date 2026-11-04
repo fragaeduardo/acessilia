@@ -361,7 +361,7 @@ _UNICODE_REPAIR_BLOCK_TYPES = {
 }
 
 #: Sections of a table AST whose cells carry text.
-_TABLE_SECTIONS = ("header", "body", "footer")
+from backend.core.manifest.table_reading import _TABLE_SECTIONS
 
 #: Word-internal spaced accents needed before standalone ones (an accent
 #: separated from its word) are treated as the same extraction defect. A
@@ -420,21 +420,12 @@ def _repair_table_cells(
 
 
 #: Slack, in PDF points, when finding the element a negation slash lies in.
-_OVERLAY_HOST_TOLERANCE = 1.5
+from backend.core.manifest.element_geometry import _OVERLAY_HOST_TOLERANCE
 #: A text line is about this many slash heights tall (glyph plus leading).
 _OVERLAY_LINE_HEIGHTS = 1.25
 
 
-def _bbox(element: ManifestElement, page: int | None = None) -> tuple[int, Any] | None:
-    """``(page, box)`` of the element: on ``page`` when given, else the first boxed one.
-
-    An element can carry provenances on more than one page; a slash is only
-    compared with the part of an element that lies on the slash's own page.
-    """
-    for provenance in element.provenance or []:
-        if provenance.bbox is not None and page in (None, provenance.page_number):
-            return provenance.page_number, provenance.bbox
-    return None
+from backend.core.manifest.element_geometry import _bbox
 
 
 def _vertical(box: Any) -> tuple[float, float]:
@@ -874,7 +865,7 @@ def _handle_pymupdf_region_method(manifest: ProcessingManifest, obligation_id: s
 
 #: Inputs ``pdf.render@2`` opens. The pipeline also accepts TIFF, BMP, GIF and
 #: WebP; the Toolbox does not render those, and there is no local fallback.
-_RENDERABLE_MEDIA_TYPES = frozenset({"application/pdf", "image/png", "image/jpeg"})
+from backend.core.manifest.preprocessing.render_regions import _RENDERABLE_MEDIA_TYPES
 
 
 from backend.core.manifest.preprocessing.render_regions import _source_artifact_id

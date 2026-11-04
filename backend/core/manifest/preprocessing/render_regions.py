@@ -53,3 +53,6 @@ def _picture_clip(
         else "TOPLEFT"
     )
     return (left, top, right, bottom), origin
+
+
+_RENDERABLE_MEDIA_TYPES = frozenset({"application/pdf", "image/png", "image/jpeg"})

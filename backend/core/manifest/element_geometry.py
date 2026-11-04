@@ -52,3 +52,18 @@ def _element_role(element: ManifestElement) -> str | None:
     if role:
         return role
     return {"page_header": "header", "page_footer": "footer"}.get(element.type)
+
+
+#: Bounding box on a given source page; shared by overlay composition.
+def _bbox(element: ManifestElement, page: int | None = None) -> tuple[int, Any] | None:
+    """``(page, box)`` of the element: on ``page`` when given, else the first boxed one.
+
+    An element can carry provenances on more than one page; a slash is only
+    compared with the part of an element that lies on the slash's own page.
+    """
+    for provenance in element.provenance or []:
+        if provenance.bbox is not None and page in (None, provenance.page_number):
+            return provenance.page_number, provenance.bbox
+    return None
+
+_OVERLAY_HOST_TOLERANCE = 1.5
