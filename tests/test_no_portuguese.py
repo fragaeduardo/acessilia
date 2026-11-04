@@ -244,6 +244,10 @@ EXEMPT_STRINGS: list[tuple[str, str]] = [
     ("backend/core/execution/handlers/vision_description.py", "Nenhuma imagem encontrada para a obrigação"),
     ("backend/core/execution/handlers/vision_description.py", "Imagem sem descrição textual: "),
     ("backend/core/execution/handlers/vision_description.py", "Descrição validada para {len(elements)} imagem(ns)"),
+    # Existing Unicode repair messages, intentionally kept for users.
+    ("backend/core/execution/handlers/unicode_repair.py", "Nenhum texto elegível para reparo Unicode"),
+    ("backend/core/execution/handlers/unicode_repair.py", "Reparo Unicode aplicado em"),
+    ("backend/core/execution/handlers/unicode_repair.py", "para revisão"),
     # Existing user-visible strings relocated into dedicated execution modules.
     ("backend/core/execution/handlers/common.py", "Obrigação não encontrada:"),
     ("backend/core/execution/handlers/common.py", "Escalonado para revisão humana:"),
