@@ -8,7 +8,7 @@ from backend.agents import pddl_orchestrator as legacy
 from backend.core.execution import recovery
 from backend.core.execution.handlers import common, deterministic, mathematics
 from backend.core.manifest import element_geometry, payload, payload_lists, payload_text, table_reading
-from backend.core.manifest.preprocessing import media_triage, visual_signals
+from backend.core.manifest.preprocessing import media_triage, page_limits, visual_signals
 from backend.core.planning import coordinator
 
 
@@ -61,3 +61,18 @@ def test_media_triage_handles_missing_genre_without_speculative_classification()
 def test_coordinator_is_the_single_orchestration_planning_entrypoint():
     assert legacy.build_nominal_plan is coordinator.build_nominal_plan
     assert legacy.unavailable_methods is coordinator.unavailable_methods
+
+
+def test_page_limit_failures_remain_the_same_exception_class():
+    assert legacy.DocumentTooLargeError is page_limits.DocumentTooLargeError
+    assert legacy.StructuralExtractionError is page_limits.StructuralExtractionError
+    assert legacy._check_page_limit_before_extraction is page_limits._check_page_limit_before_extraction
+
+
+def test_unverified_preflight_page_count_does_not_reject_document():
+    # Actual extractors remain authoritative for non-verified PDF counts.
+    page_limits._check_page_limit_before_extraction({
+        "is_pdf": True, "page_count": 999999,
+        "page_count_source": "unverified",
+    })
+    page_limits._check_page_limit_before_extraction(None)

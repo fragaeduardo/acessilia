@@ -41,6 +41,7 @@
 | `backend/core/manifest/payload_lists.py` | Recuperação de listas alfabéticas, callouts e agrupamento | Extraído |
 | `backend/core/manifest/payload_text.py` | Serialização em texto e normalização de links de metadados | Extraído |
 | `backend/core/manifest/preprocessing/media_triage.py` | media.inspect, apresentações e fallback de imagem inteira | Extraído |
+| `backend/core/manifest/preprocessing/page_limits.py` | Limites de páginas com preflight verificado e pós-extração obrigatório | Extraído |
 | `backend/core/manifest/preprocessing/visual_signals.py` | Heurísticas já existentes de ruído OCR/placeholder | Extraído |
 
 ### Fluxo efetivo
@@ -84,6 +85,14 @@ python -m pytest -q -m "not e2e" \
   tests/test_table_ast.py \
   tests/test_manifest_characterization.py
 ```
+
+As projeções de evidências usam índice por elemento, e o grafo de dependências
+é verificado iterativamente para documentos com muitas obrigações, sem alterar
+os passos emitidos pelo PDDL. A projeção tolera repetição em arrays legados,
+sem mudar o manifesto enviado ao `PlannerAgent`.
+
+O CI deste fork agora inclui a suíte completa `not e2e` do Core e as suítes
+das bibliotecas `docstruct` e SDK, após a suíte focada.
 
 Os golden outputs de payload e planner devem continuar iguais ao baseline
 quando nenhuma política muda. A suíte focada não substitui E2E com a
