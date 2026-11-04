@@ -248,6 +248,12 @@ EXEMPT_STRINGS: list[tuple[str, str]] = [
     ("backend/core/execution/handlers/unicode_repair.py", "Nenhum texto elegível para reparo Unicode"),
     ("backend/core/execution/handlers/unicode_repair.py", "Reparo Unicode aplicado em"),
     ("backend/core/execution/handlers/unicode_repair.py", "para revisão"),
+    ("backend/core/execution/handlers/text_methods.py", "Nenhuma repetição degenerada"),
+    ("backend/core/execution/handlers/text_methods.py", "Guarda de repetição"),
+    ("backend/core/execution/handlers/text_methods.py", "Nenhum número de linha marginal"),
+    ("backend/core/execution/handlers/text_methods.py", "número(s) de linha extraído(s)"),
+    ("backend/core/execution/handlers/text_methods.py", "Nenhum bloco de verso elegível"),
+    ("backend/core/execution/handlers/text_methods.py", "Verso fragmentado"),
     # Existing user-visible strings relocated into dedicated execution modules.
     ("backend/core/execution/handlers/common.py", "Obrigação não encontrada:"),
     ("backend/core/execution/handlers/common.py", "Escalonado para revisão humana:"),
