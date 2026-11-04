@@ -78,17 +78,15 @@ def _inject_full_page_picture(
     manifest: ProcessingManifest,
     media_inspection: dict[str, Any] | None,
 ) -> None:
-    """Injeta um elemento `picture` sintético de página inteira.
+    """Add a synthetic full-page picture for standalone raster images.
 
-    Quando a entrada é uma imagem raster isolada (``media_inspect`` classifica
-    como imagem e sinaliza ``requires_visual_inspection=true``) e o extrator
-    estrutural não produziu nenhum bloco visual (picture/formula), o orquestrador
-    não teria alvo para audiodescrição. Este fallback cria um elemento `picture`
-    que cobre a página inteira para que o VisionAgent descreva a imagem.
+    When media.inspect identifies an image that needs visual interpretation,
+    and structural extraction finds no picture or formula, create a picture
+    element for VisionAgent to describe. Existing unstructured-page
+    placeholders already have their own planned inspection method.
 
-    O sinal é consumido apenas como heurística de enriquecimento: não altera o
-    problema PDDL (predicados ``media_inspected``/``media_profile_classified``
-    pertencem ao domínio da Toolbox).
+    This signal is a preprocessing heuristic, not a change in PDDL goals
+    or to the Toolbox media classification domain.
     """
     if not isinstance(media_inspection, dict):
         return

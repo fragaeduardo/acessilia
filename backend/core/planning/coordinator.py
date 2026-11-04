@@ -56,7 +56,7 @@ def build_nominal_plan(
     """
     proposal_intent = observe_planning_intent(manifest)
     logger.debug(
-        "PDDL: {} propostas rastreadas, {} evidências; solucionador original mantido",
+        "PDDL: {} traced proposals, {} evidence items; original solver retained",
         len(proposal_intent),
         sum(len(item.evidence) for item in proposal_intent),
     )
@@ -100,7 +100,7 @@ def build_nominal_plan(
         blocked_methods=gated, gate_mode="enforce",
     )
     logger.debug(
-        "PDDL: {} bindings verificadas ({} escalonamentos humanos)",
+        "PDDL: {} bindings checked ({} human-review escalations)",
         len(bindings),
         sum(item.status == "human-review" for item in bindings),
     )

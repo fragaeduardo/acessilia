@@ -50,10 +50,11 @@ def _handle_mathml_method(
     manifest: ProcessingManifest, obligation_id: str, *,
     convert_latex=None,
 ) -> MethodResult:
-    """Converte o LaTeX das fórmulas alvo em MathML (metadata.mathml) via math.convert.
+    """Convert target LaTeX formulas to MathML via Toolbox math.convert.
 
-    Uma math.convert indisponível falha o método explicitamente (sem conversão
-    local, ADR-0007), para o executor tentar outro método ou replanejar.
+    Toolbox outages are explicit failures. The executor may try another
+    admissible method or replan; no local conversion fallback is permitted
+    (ADR-0007).
     """
     elements = _formula_elements_for_obligation(manifest, obligation_id)
     if not elements:
@@ -95,10 +96,10 @@ def _handle_latex_verbalizer_method(
     manifest: ProcessingManifest, obligation_id: str, *,
     verbalize_latex=None,
 ) -> MethodResult:
-    """Gera a verbalização pt-BR das fórmulas (metadata.verbalization) via math.verbalize.
+    """Generate spoken formula metadata via Toolbox math.verbalize.
 
-    Uma math.verbalize indisponível falha o método explicitamente (sem
-    verbalizador local, ADR-0007).
+    Toolbox outages fail explicitly, without a local speech fallback
+    (ADR-0007).
     """
     elements = _formula_elements_for_obligation(manifest, obligation_id)
     if not elements:

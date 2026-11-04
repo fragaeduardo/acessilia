@@ -237,6 +237,22 @@ EXEMPT_STRINGS: list[tuple[str, str]] = [
     ("libs/docstruct/tests/test_unicode_repair.py", "à"),
     ("tests/test_legacy_unicode_repair.py", "à medida"),
     ("docs/docstruct_algorithms.md", "→ `à`"),
+    # Existing user-visible strings relocated into dedicated execution modules.
+    ("backend/core/execution/handlers/common.py", "Obrigação não encontrada:"),
+    ("backend/core/execution/handlers/common.py", "Escalonado para revisão humana:"),
+    ("backend/core/execution/handlers/deterministic.py", "Nenhuma tabela encontrada para a obrigação"),
+    ("backend/core/execution/handlers/deterministic.py", "Nenhum bloco de código encontrado para a obrigação"),
+    ("backend/core/execution/handlers/deterministic.py", "Código normalizado em"),
+    ("backend/core/execution/handlers/deterministic.py", "Nenhuma fórmula encontrada para a obrigação"),
+    ("backend/core/execution/handlers/deterministic.py", "LaTeX normalizado em"),
+    ("backend/core/execution/handlers/deterministic.py", "Nenhum texto elegível para normalização"),
+    ("backend/core/execution/handlers/deterministic.py", "Normalização determinística aplicada em"),
+    ("backend/core/execution/handlers/deterministic.py", "Nenhum título encontrado para a obrigação"),
+    ("backend/core/execution/handlers/deterministic.py", "Hierarquia de títulos verificada"),
+    ("backend/core/execution/handlers/mathematics.py", "Nenhuma fórmula encontrada para a obrigação"),
+    ("backend/core/execution/handlers/mathematics.py", "MathML gerado para"),
+    ("backend/core/execution/handlers/mathematics.py", "Verbalização gerada para"),
+    ("backend/core/manifest/payload.py", "Texto com sinais de Unicode legado"),
 ]
 
 # Build the exempt set from strings so we can check quickly.

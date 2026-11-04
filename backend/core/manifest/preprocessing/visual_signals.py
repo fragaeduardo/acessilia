@@ -19,17 +19,18 @@ def _is_mostly_visual_manifest(manifest: ProcessingManifest) -> bool:
 
 
 def _is_ocr_noise(text: str) -> bool:
-    """Retorna True se o texto parece ser ruído de OCR (muito curto, sem
-    estrutura de linguagem natural), não devendo ser considerado como
-    conteúdo textual significativo para efeitos de detecção de manifesto
-    majoritariamente visual."""
+    """Return whether text is probably OCR noise, not useful prose.
+
+    Tiny strings or short strings without spaces do not establish meaningful
+    natural-language content in a predominantly visual document.
+    """
     normalized = text.strip()
     if not normalized:
         return True
-    # Texto muito curto (≤4 caracteres) é quase sempre OCR noise
+    # Very short text (up to 4 characters) is usually OCR noise
     if len(normalized) <= 4:
         return True
-    # Texto sem espaços e com ≤8 caracteres também é suspeito
+    # Short unspaced text (up to 8 characters) is also suspicious
     if " " not in normalized and len(normalized) <= 8:
         return True
     return False
@@ -52,9 +53,11 @@ def _is_placeholder_text(text: str) -> bool:
 
 
 def _has_meaningful_text(element: ManifestElement) -> bool:
-    """Retorna True se o elemento contém texto significativo (não é OCR noise
-    nem placeholder). Usado para filtrar elementos do tipo 'picture' que já
-    vieram com descrição textual válida do extrator."""
+    """Whether the extractor supplied substantive picture text.
+
+    Discard OCR noise and structural placeholders while preserving
+    meaningful extracted descriptions.
+    """
     text = (element.text or "").strip()
     if not text:
         return False
