@@ -23,6 +23,7 @@ def _plan_progress(
     manifest: ProcessingManifest,
     status_callback: Callable[[str], Coroutine[Any, Any, None]] | None,
     loop: asyncio.AbstractEventLoop,
+    *, translator=None,
 ) -> StepProgress | None:
     """Report each obligation step, with its pages, through ``status_callback``.
 
@@ -57,7 +58,7 @@ def _plan_progress(
             pages,
         )
         try:
-            message = t(STAGE_EXECUTING_PLAN_STEP).format(
+            message = (translator or t)(STAGE_EXECUTING_PLAN_STEP).format(
                 current=position,
                 total=total,
                 pages=_pages_label(pages, len(manifest.pages)),

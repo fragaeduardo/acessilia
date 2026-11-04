@@ -875,10 +875,19 @@ from backend.core.manifest.preprocessing.visual_signals import (
 
 # Observability callbacks now live outside the orchestration facade.
 from backend.core.orchestration.reporting import (
-    _plan_progress,
     _log_availability,
     _PROGRESS_REPORT_TIMEOUT_SECONDS,
 )
+
+
+def _plan_progress(
+    manifest: ProcessingManifest,
+    status_callback: Callable[[str], Coroutine[Any, Any, None]] | None,
+    loop: asyncio.AbstractEventLoop,
+) -> StepProgress | None:
+    """Delegate progress reporting, preserving locale override injection."""
+    from backend.core.orchestration.reporting import _plan_progress as implementation
+    return implementation(manifest, status_callback, loop, translator=t)
 
 
 # Backward compatibility with the PMV naming.

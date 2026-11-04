@@ -22,6 +22,7 @@ from backend.agents.vision_agent import VisionAgent
 from backend.core.execution.handlers.common import _missing_obligation, _target_elements
 from backend.core.execution.models import MethodResult
 from backend.core.manifest.builder import is_unstructured_page_placeholder
+from backend.tools.formula_tools import normalize_latex
 from backend.core.manifest.models import Artifact, ManifestElement, ProcessingManifest
 from backend.core.manifest.preprocessing.render_regions import _source_artifact_id
 from backend.tools.logger import logger

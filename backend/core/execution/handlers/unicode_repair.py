@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from docstruct.text.math_spans import mask_inline_math
+from docstruct.text.latex import has_latex_markup
 from docstruct.text.negation_overlay import (
     compose_negation, is_detached_overlay, locate_in_grid, locate_in_text, negates,
 )
