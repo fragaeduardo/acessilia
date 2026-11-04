@@ -486,6 +486,13 @@ DETERMINISTIC_METHOD_HANDLERS: dict[
 
 # Fusion execution and evidence persistence are owned by execution.
 from backend.core.execution.handlers import fusion_execution as _fusion_execution
+from backend.core.manifest.preprocessing.page_limits import (
+    StructuralExtractionError,
+    DocumentTooLargeError,
+    _check_page_count,
+    _check_page_limit_before_extraction,
+    _check_page_limit,
+)
 from backend.core.execution.handlers.fusion_execution import (
     _reusable_fusion_payload,
     _fused_text_elements,
