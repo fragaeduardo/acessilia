@@ -37,7 +37,9 @@
 | `backend/core/execution/handlers/deterministic.py` | Handlers determinísticos de tabela/código/LaTeX/texto | Extraído |
 | `backend/core/manifest/table_reading.py` | Parsing e admissibilidade de tabelas sem chamar providers | Extraído |
 | `backend/core/manifest/element_geometry.py` | Geometria normalizada e papel estrutural de elementos | Extraído |
-| `backend/core/manifest/payload.py` | Payload canônico, texto, avisos, blocos e metadados | Extraído |
+| `backend/core/manifest/payload.py` | Payload canônico, páginas, avisos e blocos | Extraído |
+| `backend/core/manifest/payload_lists.py` | Recuperação de listas alfabéticas, callouts e agrupamento | Extraído |
+| `backend/core/manifest/payload_text.py` | Serialização em texto e normalização de links de metadados | Extraído |
 | `backend/core/manifest/preprocessing/media_triage.py` | media.inspect, apresentações e fallback de imagem inteira | Extraído |
 | `backend/core/manifest/preprocessing/visual_signals.py` | Heurísticas já existentes de ruído OCR/placeholder | Extraído |
 
@@ -98,9 +100,11 @@ Toolbox/homologação nem benchmarking de modelos.
 - Evoluir `PlanningProposal` de projeção somente leitura para fontes
   universais/especializadas **somente quando existirem regras reais**,
   sem duplicar as obrigações nem chamadas a modelos (1C/1D/1E).
-- Auditar integralmente `METHOD_TOOLBOX_REQUIREMENTS` contra os handlers
-  remotos e testar catálogo desatualizado/provedor indisponível em modo
-  `observe/enforce/off` (1F/1G).
+- **Já cobertos:** `mathml` e `latex-verbalizer` exigem `math.convert` e
+  `math.verbalize` (mesmo `TOOLBOX_MATH_PROVIDER` do SDK); fixtures do gate
+  verificam catálogo indisponível e provider incompatível. **Pendente:**
+  auditoria completa de `METHOD_TOOLBOX_REQUIREMENTS` e E2E de catálogo
+  desatualizado nos modos `observe/enforce/off` (1F/1G).
 - Confirmar com ambiente de homologação o isolamento PROD/HOMOL,
   budgets, contrato VLM/Toolbox e paridade completa dos domínios e
   metadados serializados (1H/1I).
