@@ -86,6 +86,7 @@ from backend.core.planning.domain_bundle import DomainBundle
 from backend.core.planning.models import NominalPlan, PlanningComparison, PlanStep
 from backend.core.planning import toolbox_gate
 from backend.core.planning.planner_agent import PlannerAgent
+from backend.core.planning.coordinator import build_nominal_plan, unavailable_methods
 from backend.i18n import locale_for_user, n, reset_request_locale, set_request_locale, t
 from backend.log_messages import (
     LOG_MEDIA_INSPECT_FAILED,
@@ -2996,57 +2997,26 @@ class PddlAccessibilityOrchestrator:
         extra_unavailable: Iterable[str] = (),
         selected_roots: Iterable[str] | None = None,
     ) -> tuple[NominalPlan, PlanningComparison | None]:
-        # Tell the compiler which methods the executor can actually run. Without
-        # this the planner happily emits steps for methods that have no handler,
-        # and the failure only surfaces at execution time -- after the model-backed
-        # work has already been paid for. ``extra_unavailable`` adds the methods
-        # the Toolbox availability gate rules out for this document.
-        unavailable = sorted(
-            set(self._unavailable_methods(manifest)) | set(extra_unavailable)
-        )
-        if self.planner_backend == "both":
-            _, plans, comparison = self.planner.compare(
-                manifest,
-                selected_roots=selected_roots,
-                unavailable_methods=unavailable,
-                fast_downward=self.fast_downward,
-                fast_downward_alias=self.fast_downward_alias,
-                fast_downward_search=self.fast_downward_search,
-                preferred_backend=self.preferred_plan,
-            )
-            if self.preferred_plan not in plans:
-                raise RuntimeError(
-                    t(LOG_PDDL_PREFERRED_PLAN_MISSING).format(
-                        backend=self.preferred_plan
-                    )
-                )
-            return plans[self.preferred_plan], comparison
-
-        _, plan = self.planner.plan(
-            manifest,
-            selected_roots=selected_roots,
-            unavailable_methods=unavailable,
-            backend=self.planner_backend,
+        """Build exactly one nominal plan through the shared PDDL coordinator."""
+        return build_nominal_plan(
+            manifest=manifest,
+            planner=self.planner,
+            planner_backend=self.planner_backend,
+            preferred_plan=self.preferred_plan,
             fast_downward=self.fast_downward,
             fast_downward_alias=self.fast_downward_alias,
             fast_downward_search=self.fast_downward_search,
+            registered_handlers=self.executor.registry.names(),
+            unavailable_handlers=self._unavailable_methods(manifest),
+            extra_unavailable=extra_unavailable,
+            selected_roots=selected_roots,
         )
-        return plan, None
 
     def _unavailable_methods(self, manifest: ProcessingManifest) -> list[str]:
-        """Methods this manifest can ask for that no registered handler implements.
-
-        The set is restricted to the methods the manifest actually declares: the
-        compiler rejects unknown names on purpose, so passing every method that
-        exists anywhere would be reported as a typo instead of a capability gap.
-        """
-        registered = set(self.executor.registry.names())
-        requested = {
-            method
-            for obligation in manifest.obligations
-            for method in obligation.admissible_methods
-        }
-        return sorted(requested - registered)
+        """Compatibility entrypoint for executor registry availability."""
+        return unavailable_methods(
+            manifest, registered_handlers=self.executor.registry.names()
+        )
 
 
 #: Why a picture was left undescribed, recorded in metadata["vision_failure_reason"]
