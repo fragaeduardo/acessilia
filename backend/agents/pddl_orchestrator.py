@@ -1987,71 +1987,8 @@ def _handle_xycut_order_method(
     )
 
 
-def _handle_human_review_method(
-    manifest: ProcessingManifest, obligation_id: str
-) -> MethodResult:
-    """Record the obligation as escalated to a human reviewer.
-
-    `human-review` is the terminal method every obligation lists as its last
-    admissible option. It is not an automated method that can succeed on its own,
-    so resolving it must be an explicit decision: an obligation reaching this
-    handler is escalated and stays visible in the execution report, instead of
-    being marked satisfied by a handler that did nothing.
-    """
-    obligation = next(
-        (o for o in manifest.obligations if o.id == obligation_id), None
-    )
-    if obligation is None:
-        return _missing_obligation(obligation_id)
-
-    return MethodResult(
-        success=False,
-        validated=False,
-        message=(
-            "Escalonado para revisão humana: nenhum método automático satisfez "
-            f"{obligation.kind} ({obligation_id})"
-        ),
-    )
-
-
-def _handle_deterministic_heading_repair_method(
-    manifest: ProcessingManifest, obligation_id: str
-) -> MethodResult:
-    """Repair the full sequence, since fixing one heading can expose a later gap."""
-    obligation = next(
-        (o for o in manifest.obligations if o.id == obligation_id), None
-    )
-    if obligation is None:
-        return _missing_obligation(obligation_id)
-
-    targets = _target_elements(manifest, obligation_id)
-    if not targets or any(element.type not in {"title", "heading"} for element in targets):
-        return MethodResult(
-            success=False,
-            validated=False,
-            message="Nenhum título encontrado para a obrigação",
-        )
-    previous = 0
-    repaired = 0
-    for element in sorted(manifest.elements, key=lambda item: item.reading_order):
-        if element.type not in {"title", "heading"}:
-            continue
-        level = 1 if not previous else max(2, min(element.hierarchy_level, previous + 1, 6))
-        if previous and element.type == "title":
-            element.metadata["original_type"] = "title"
-            element.type = "heading"
-        if level != element.hierarchy_level:
-            element.metadata["original_heading_level"] = element.hierarchy_level
-            element.hierarchy_level = level
-            element.metadata["heading_repaired"] = True
-            repaired += 1
-        previous = level
-    manifest.summary.element_types = dict(Counter(element.type for element in manifest.elements))
-    return MethodResult(
-        success=True,
-        validated=True,
-        message=f"Hierarquia de títulos verificada; {repaired} título(s) reparado(s)",
-    )
+from backend.core.execution.handlers.common import _handle_human_review_method
+from backend.core.execution.handlers.deterministic import _handle_deterministic_heading_repair_method
 
 
 DETERMINISTIC_METHOD_HANDLERS: dict[

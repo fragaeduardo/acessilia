@@ -5,6 +5,8 @@ These are existing methods from MethodRegistry, not new capabilities.
 
 from __future__ import annotations
 
+from collections import Counter
+
 from docstruct.tables.ast import linearize_table_for_text, raw_rows_from_table_ast as _rows_from_table_ast
 from docstruct.text.norm_fix import norm_fix
 
@@ -166,4 +168,44 @@ def _handle_norm_fix_method(
         success=True,
         validated=True,
         message=f"Normalização determinística aplicada em {fixed} elemento(s)",
+    )
+
+
+def _handle_deterministic_heading_repair_method(
+    manifest: ProcessingManifest, obligation_id: str
+) -> MethodResult:
+    """Repair the full sequence, since fixing one heading can expose a later gap."""
+    obligation = next(
+        (o for o in manifest.obligations if o.id == obligation_id), None
+    )
+    if obligation is None:
+        return _missing_obligation(obligation_id)
+
+    targets = _target_elements(manifest, obligation_id)
+    if not targets or any(element.type not in {"title", "heading"} for element in targets):
+        return MethodResult(
+            success=False,
+            validated=False,
+            message="Nenhum título encontrado para a obrigação",
+        )
+    previous = 0
+    repaired = 0
+    for element in sorted(manifest.elements, key=lambda item: item.reading_order):
+        if element.type not in {"title", "heading"}:
+            continue
+        level = 1 if not previous else max(2, min(element.hierarchy_level, previous + 1, 6))
+        if previous and element.type == "title":
+            element.metadata["original_type"] = "title"
+            element.type = "heading"
+        if level != element.hierarchy_level:
+            element.metadata["original_heading_level"] = element.hierarchy_level
+            element.hierarchy_level = level
+            element.metadata["heading_repaired"] = True
+            repaired += 1
+        previous = level
+    manifest.summary.element_types = dict(Counter(element.type for element in manifest.elements))
+    return MethodResult(
+        success=True,
+        validated=True,
+        message=f"Hierarquia de títulos verificada; {repaired} título(s) reparado(s)",
     )
