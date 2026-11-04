@@ -40,6 +40,10 @@ jobs:
             tests/test_planning_proposals.py \
             tests/test_planning_coordinator.py \
             tests/test_pddl_modularization_contract.py \
+            tests/test_formula_enrichment.py \
+            tests/test_media_inspect.py \
+            tests/test_no_portuguese.py \
+            tests/test_noncritical_obligations.py \
             tests/test_toolbox_availability_gate.py \
             tests/test_pddl_planning.py \
             tests/test_pddl_execution_contract.py \
