@@ -88,10 +88,14 @@ def proposals_from_manifest(manifest: Any) -> tuple[PlanningProposal, ...]:
             PlanningProposal(
                 proposal_id=obligation.id,
                 obligation_kind=obligation.kind,
-                target_ids=tuple(obligation.target_ids),
+                # Older manifests may repeat values in these arrays. A
+                # diagnostic projection cannot reject inputs the original
+                # PDDL planner accepted. Keep first-occurrence order here,
+                # and leave the actual manifest completely unchanged.
+                target_ids=tuple(dict.fromkeys(obligation.target_ids)),
                 evidence=evidence,
-                dependencies=tuple(obligation.dependencies),
-                admissible_methods=tuple(obligation.admissible_methods),
+                dependencies=tuple(dict.fromkeys(obligation.dependencies)),
+                admissible_methods=tuple(dict.fromkeys(obligation.admissible_methods)),
                 source="manifest-builder",
                 priority=0,
                 rationale=obligation.rationale,

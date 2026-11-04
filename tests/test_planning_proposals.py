@@ -198,3 +198,20 @@ def test_long_chain_with_back_edge_is_detected_without_recursion():
     ]
     with pytest.raises(ValueError, match="cyclic proposal dependency"):
         consolidate_proposals(manifest, proposals)
+
+
+def test_projection_tolerates_repeated_manifest_values_without_mutating_source():
+    manifest = _manifest()
+    obligation = manifest.obligations[0]
+    obligation.target_ids = ["img", "img"]
+    obligation.dependencies = ["o-table", "o-table"]
+    obligation.admissible_methods = ["vision-description", "human-review", "vision-description"]
+    before = (list(obligation.target_ids), list(obligation.dependencies),
+              list(obligation.admissible_methods))
+    projected = proposals_from_manifest(manifest)[0]
+    assert projected.target_ids == ("img",)
+    assert projected.dependencies == ("o-table",)
+    assert projected.admissible_methods == ("vision-description", "human-review")
+    assert (
+        obligation.target_ids, obligation.dependencies, obligation.admissible_methods
+    ) == before
