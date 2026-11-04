@@ -40,6 +40,8 @@ def test_handlers_share_one_implementation_with_original_registry_entrypoints():
     assert legacy._handle_latex_verbalizer_method is mathematics._handle_latex_verbalizer_method
     assert legacy._handle_pandoc_table_method is deterministic._handle_pandoc_table_method
     assert legacy._handle_norm_fix_method is deterministic._handle_norm_fix_method
+    assert legacy._handle_human_review_method is common._handle_human_review_method
+    assert legacy._handle_deterministic_heading_repair_method is deterministic._handle_deterministic_heading_repair_method
 
 
 def test_preprocessing_exports_keep_original_contracts():
