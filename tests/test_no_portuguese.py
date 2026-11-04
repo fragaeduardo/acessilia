@@ -253,6 +253,7 @@ EXEMPT_STRINGS: list[tuple[str, str]] = [
     ("backend/core/execution/handlers/text_methods.py", "Nenhum número de linha marginal"),
     ("backend/core/execution/handlers/text_methods.py", "número(s) de linha extraído(s)"),
     ("backend/core/execution/handlers/text_methods.py", "Nenhum bloco de verso elegível"),
+    ("backend/core/execution/handlers/text_methods.py", "Nenhum bloco de cauda elegível para união"),
     ("backend/core/execution/handlers/text_methods.py", "Verso fragmentado"),
     # Existing user-visible strings relocated into dedicated execution modules.
     ("backend/core/execution/handlers/common.py", "Obrigação não encontrada:"),
