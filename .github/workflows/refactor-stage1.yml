@@ -16,7 +16,7 @@ jobs:
   focused-regression:
     name: Planning, payload and execution regressions
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout fork branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -47,3 +47,11 @@ jobs:
             tests/test_pddl_payload_lists_and_callouts.py \
             tests/test_table_ast.py \
             tests/test_manifest_characterization.py
+      - name: Complete Core regression suite (excluding external E2E)
+        run: python -m pytest -q -m "not e2e" --junitxml=core-test-results.xml
+      - name: Docstruct library regression suite
+        working-directory: libs/docstruct
+        run: python -m pytest -q --junitxml=docstruct-test-results.xml
+      - name: SDK library regression suite
+        working-directory: libs/sdk
+        run: python -m pytest -q --junitxml=sdk-test-results.xml
