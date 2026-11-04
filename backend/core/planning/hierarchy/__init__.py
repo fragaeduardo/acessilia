@@ -2,6 +2,7 @@
 
 from .bindings import ExecutionBinding, inspect_execution_bindings
 from .global_planner import ProposalConflict, consolidate_proposals, observe_planning_intent
+from .registry import analyzer_for_kind, collect_proposals
 from .proposals import PlanningProposal, ProposalEvidence, proposals_from_manifest
 
 __all__ = [
@@ -9,6 +10,8 @@ __all__ = [
     "PlanningProposal",
     "ProposalConflict",
     "ProposalEvidence",
+    "analyzer_for_kind",
+    "collect_proposals",
     "consolidate_proposals",
     "inspect_execution_bindings",
     "observe_planning_intent",

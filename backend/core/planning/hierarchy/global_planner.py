@@ -92,4 +92,6 @@ def observe_planning_intent(manifest: Any) -> tuple[PlanningProposal, ...]:
 
     The existing PlannerAgent still owns PDDL compilation and solving.
     """
-    return consolidate_proposals(manifest, proposals_from_manifest(manifest))
+    from .registry import collect_proposals
+
+    return consolidate_proposals(manifest, collect_proposals(manifest))
