@@ -14,7 +14,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from docstruct.text.equations import preserve_equation_number
+from docstruct.text.equations import preserve_equation_number, split_equation_number
 from docstruct.text.inline_math import (
     InlineMathDetection, TextSpan, assign_runs_to_cells,
     detect_inline_math, splice_inline_math,

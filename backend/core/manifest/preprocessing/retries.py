@@ -20,6 +20,7 @@ async def _retry_failed(
     *,
     kind: str,
     breaker: ProviderBreaker,
+    sleep=None,
 ) -> int:
     """Try once more, one at a time, what a vision stage left without a
     usable answer: the calls the model failed, and the pictures it answered
@@ -44,7 +45,7 @@ async def _retry_failed(
     logger.warning(
         n(*kind_msgids, len(failed)).format(count=len(failed), delay=delay)
     )
-    await asyncio.sleep(delay)
+    await (sleep or asyncio.sleep)(delay)
     breaker.probe()
     enriched = 0
     for position, element in failed:

@@ -2514,7 +2514,20 @@ async def _enrich_picture_descriptions(
     )
 
 
-from backend.core.manifest.preprocessing.retries import _retry_failed
+from backend.core.manifest.preprocessing.retries import _retry_failed as _retry_failed_impl
+
+
+async def _retry_failed(
+    failed: list[tuple[int, ManifestElement]],
+    attempt: Callable[[int, ManifestElement], Coroutine[Any, Any, bool]],
+    *,
+    kind: str,
+    breaker: ProviderBreaker,
+) -> int:
+    """Preserve the facade's injectable sleep for deterministic retry tests."""
+    return await _retry_failed_impl(
+        failed, attempt, kind=kind, breaker=breaker, sleep=asyncio.sleep
+    )
 
 
 # Formula algorithms live in one pre-PDDL module with explicit runtime hooks.
