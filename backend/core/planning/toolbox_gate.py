@@ -53,6 +53,14 @@ METHOD_TOOLBOX_REQUIREMENTS: dict[str, Callable[[], list[Requirement]]] = {
         Requirement(_EXTRACT, settings.fusion_secondary_provider),
     ],
     "single-provider": lambda: [Requirement(_EXTRACT, settings.toolbox_provider)],
+    # Both handlers use ToolboxMathClient.transform_provider, which resolves
+    # to TOOLBOX_MATH_PROVIDER (not the recognition provider).
+    "mathml": lambda: [
+        Requirement("math.convert", settings.toolbox_math_provider)
+    ],
+    "latex-verbalizer": lambda: [
+        Requirement("math.verbalize", settings.toolbox_math_provider)
+    ],
     # Methods that render pages or regions; pdf.render@2 also renders raster
     # inputs, so they need it for images too.
     "vision-page-inspection": lambda: [
