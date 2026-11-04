@@ -287,6 +287,12 @@ from backend.core.execution.handlers.common import _target_elements, _missing_ob
 
 
 from backend.core.execution.handlers.vision_description import _handle_vision_description_method
+from backend.core.execution.handlers.deterministic import (
+    _handle_pandoc_table_method,
+    _handle_pandoc_code_method,
+    _handle_latex_normalizer_method,
+    _handle_norm_fix_method,
+)
 
 
 # Unicode repair and layout composition belong to the execution module.
