@@ -1,18 +1,28 @@
-"""Read-only execution binding diagnostics for nominal PDDL steps.
+"""Resolve planned methods to actual handlers and SDK contracts.
 
-No operation IDs, provider selection or wire schemas are invented here.
-Those belong to the deferred Stage 0. Inspect registered handlers and
-catalogue restrictions without modifying a plan.
+Bindings are derived from the existing MethodRegistry, Toolbox gate and SDK
+allowlist. They never synthesize providers, wire contracts or executable
+operations, and do not change the nominal PDDL plan or execution report.
 """
-
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from acessilia_sdk.toolbox import Requirement
+from acessilia_sdk.toolbox.capabilities import TOOLBOX_CAPABILITIES
+
 
 BindingStatus = Literal["executable", "human-review", "unavailable"]
+
+
+@dataclass(frozen=True, slots=True)
+class CapabilityBinding:
+    capability_id: str
+    provider: str
+    contract_version: int
+    output_schema: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,6 +32,8 @@ class ExecutionBinding:
     method: str
     status: BindingStatus
     catalog_blocked: bool
+    capabilities: tuple[CapabilityBinding, ...] = ()
+    validator: str = "MethodResult.validated"
 
 
 def inspect_execution_bindings(
@@ -30,12 +42,13 @@ def inspect_execution_bindings(
     registered_handlers: Iterable[str],
     blocked_methods: Iterable[str] = (),
     gate_mode: Literal["observe", "enforce", "off"] = "observe",
+    requirements_for_method: Callable[[str], Iterable[Requirement]] | None = None,
 ) -> tuple[ExecutionBinding, ...]:
-    """Check planned methods; do not rewrite a plan or execute a handler.
+    """Validate handler and SDK binding once, with no extra catalogue calls.
 
-    observe: report blocked methods without changing the plan.
-    enforce: fail if a blocked method nevertheless reaches a plan.
-    human-review: a terminal escalation, never automated success.
+    An empty capability list means the selected handler performs local work
+    or validates output from a completed bootstrap step. It is not a license
+    to invent a local replacement for a remote capability.
     """
     if gate_mode not in {"observe", "enforce", "off"}:
         raise ValueError(f"unknown gate_mode: {gate_mode}")
@@ -58,6 +71,27 @@ def inspect_execution_bindings(
             raise ValueError(f"no real handler for planned method: {method}")
         if gate_mode == "enforce" and method in blocked:
             raise ValueError(f"catalog-blocked method in enforced plan: {method}")
+
+        capabilities: list[CapabilityBinding] = []
+        if method != "human-review" and requirements_for_method is not None:
+            for requirement in requirements_for_method(method):
+                spec = TOOLBOX_CAPABILITIES.get(requirement.capability_id)
+                if spec is None:
+                    raise ValueError(
+                        f"SDK has no contract for capability: {requirement.capability_id}"
+                    )
+                if not requirement.provider:
+                    raise ValueError(
+                        f"missing configured provider for capability: {spec.id}"
+                    )
+                capabilities.append(
+                    CapabilityBinding(
+                        capability_id=spec.id,
+                        provider=requirement.provider,
+                        contract_version=spec.contract_version,
+                        output_schema=spec.output_schema,
+                    )
+                )
         bindings.append(
             ExecutionBinding(
                 step_index=step.index,
@@ -65,6 +99,11 @@ def inspect_execution_bindings(
                 method=method,
                 status=status,
                 catalog_blocked=method in blocked,
+                capabilities=tuple(capabilities),
+                validator=(
+                    "human-review-escalation"
+                    if method == "human-review" else "MethodResult.validated"
+                ),
             )
         )
     return tuple(bindings)

@@ -13,6 +13,7 @@ from typing import Any
 
 from backend.core.manifest.models import ProcessingManifest
 from backend.core.planning.hierarchy import inspect_execution_bindings, observe_planning_intent
+from backend.core.planning.toolbox_gate import METHOD_TOOLBOX_REQUIREMENTS
 from backend.core.planning.models import NominalPlan, PlanningComparison
 from backend.core.planning.planner_agent import PlannerAgent
 from backend.i18n import t
@@ -98,6 +99,10 @@ def build_nominal_plan(
     bindings = inspect_execution_bindings(
         plan, registered_handlers=registered,
         blocked_methods=gated, gate_mode="enforce",
+        requirements_for_method=lambda method: (
+            METHOD_TOOLBOX_REQUIREMENTS[method]()
+            if method in METHOD_TOOLBOX_REQUIREMENTS else ()
+        ),
     )
     logger.debug(
         "PDDL: {} bindings checked ({} human-review escalations)",
