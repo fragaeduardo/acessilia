@@ -287,6 +287,10 @@ EXEMPT_STRINGS: list[tuple[str, str]] = [
     ("backend/core/execution/handlers/fusion_execution.py", "f\"({provider or 'desconhecido'}); replanning necessário\""),
     ("backend/core/execution/handlers/fusion_execution.py", "message=\"Fusão dual-provider concluída com sucesso\","),
     ("backend/core/execution/handlers/fusion_execution.py", "message=\"single-provider só é válido para fuse-providers\","),
+    ("backend/core/orchestration/reporting.py", "\"Gate da Toolbox (catálogo {}): métodos fora do plano — {}\","),
+    ("backend/core/orchestration/reporting.py", "availability.catalog_revision or \"indisponível\","),
+    ("backend/core/orchestration/reporting.py", "\"Gate da Toolbox em observação (catálogo {}): removeria — {}\","),
+    ("backend/core/orchestration/reporting.py", "availability.catalog_revision or \"indisponível\","),
     # Existing user-visible strings relocated into dedicated execution modules.
     ("backend/core/execution/handlers/common.py", "Obrigação não encontrada:"),
     ("backend/core/execution/handlers/common.py", "Escalonado para revisão humana:"),
