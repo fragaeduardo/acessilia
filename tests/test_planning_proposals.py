@@ -156,3 +156,45 @@ def test_gate_observe_reports_but_enforce_blocks_method():
 def test_invalid_gate_mode_is_rejected():
     with pytest.raises(ValueError, match="unknown gate_mode"):
         inspect_execution_bindings(_plan("mathml"), registered_handlers={"mathml"}, gate_mode="bad")
+
+
+def test_indexed_evidence_keeps_original_order_and_avoids_duplicates():
+    manifest = _manifest()
+    manifest.observations = [
+        NS(id="first", kind="visual", severity="warning", message="A",
+           target_ids=["img", "table", "img"]),
+        NS(id="second", kind="layout", severity="info", message="B",
+           target_ids=["table", "img"]),
+        NS(id="third", kind="unrelated", severity="info", message="C",
+           target_ids=["formula"]),
+    ]
+    proposals = proposals_from_manifest(manifest)
+    assert [e.observation_id for e in proposals[0].evidence] == ["first", "second"]
+    assert [e.observation_id for e in proposals[1].evidence] == ["first", "second"]
+    assert [e.observation_id for e in proposals[2].evidence] == ["third"]
+
+
+def test_long_dependency_chain_does_not_overflow_python_recursion():
+    manifest = _manifest()
+    template = proposals_from_manifest(manifest)[0]
+    proposals = [
+        replace(template, proposal_id=f"node-{index}",
+                dependencies=(f"node-{index-1}",) if index else ())
+        for index in range(1500)
+    ]
+    result = consolidate_proposals(manifest, proposals)
+    assert [proposal.proposal_id for proposal in result] == [
+        proposal.proposal_id for proposal in proposals
+    ]
+
+
+def test_long_chain_with_back_edge_is_detected_without_recursion():
+    manifest = _manifest()
+    template = proposals_from_manifest(manifest)[0]
+    proposals = [
+        replace(template, proposal_id=f"node-{index}",
+                dependencies=(f"node-{index-1}",) if index else ("node-1499",))
+        for index in range(1500)
+    ]
+    with pytest.raises(ValueError, match="cyclic proposal dependency"):
+        consolidate_proposals(manifest, proposals)

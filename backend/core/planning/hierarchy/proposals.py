@@ -60,20 +60,30 @@ def proposals_from_manifest(manifest: Any) -> tuple[PlanningProposal, ...]:
     Attach only observations explicitly targeting an obligation's elements.
     Zero priority means unspecified; do not invent ranking in this adapter.
     """
-    observations = tuple(manifest.observations)
-    result: list[PlanningProposal] = []
-    for obligation in manifest.obligations:
-        targets = frozenset(obligation.target_ids)
-        evidence = tuple(
+    # Index evidence once rather than scanning all observations for every
+    # obligation. Preserve observation order even when targets overlap.
+    indexed: dict[str, list[int]] = {}
+    evidence_records: list[ProposalEvidence] = []
+    for index, observation in enumerate(manifest.observations):
+        evidence_records.append(
             ProposalEvidence(
                 observation_id=observation.id,
                 kind=observation.kind,
                 severity=observation.severity,
                 message=observation.message,
             )
-            for observation in observations
-            if targets.intersection(observation.target_ids)
         )
+        for target_id in set(observation.target_ids):
+            indexed.setdefault(target_id, []).append(index)
+
+    result: list[PlanningProposal] = []
+    for obligation in manifest.obligations:
+        matches = {
+            index
+            for target_id in obligation.target_ids
+            for index in indexed.get(target_id, ())
+        }
+        evidence = tuple(evidence_records[index] for index in sorted(matches))
         result.append(
             PlanningProposal(
                 proposal_id=obligation.id,

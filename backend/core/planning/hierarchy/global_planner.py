@@ -43,30 +43,47 @@ def consolidate_proposals(
             )
         by_id[proposal.proposal_id] = proposal
 
-    unknown_dependencies = {
-        proposal.proposal_id: set(proposal.dependencies) - set(by_id)
-        for proposal in by_id.values()
-        if set(proposal.dependencies) - set(by_id)
-    }
+    known_ids = set(by_id)
+    dependents: dict[str, list[str]] = {proposal_id: [] for proposal_id in by_id}
+    pending_dependencies: dict[str, int] = {}
+    unknown_dependencies: dict[str, set[str]] = {}
+    for proposal in by_id.values():
+        missing = set(proposal.dependencies) - known_ids
+        if missing:
+            unknown_dependencies[proposal.proposal_id] = missing
+            continue
+        pending_dependencies[proposal.proposal_id] = len(proposal.dependencies)
+        for dependency in proposal.dependencies:
+            dependents[dependency].append(proposal.proposal_id)
     if unknown_dependencies:
         raise ValueError(f"unknown proposal dependencies: {unknown_dependencies}")
 
-    visited: set[str] = set()
-    visiting: set[str] = set()
+    # Iterative dependency traversal avoids recursion limits on long documents.
+    # The returned proposals still follow their original order; the traversal
+    # checks only acyclicity and never rewrites the execution sequence.
+    from collections import deque
 
-    def visit(proposal_id: str) -> None:
-        if proposal_id in visiting:
-            raise ValueError(f"cyclic proposal dependency: {proposal_id}")
-        if proposal_id in visited:
-            return
-        visiting.add(proposal_id)
-        for dependency in by_id[proposal_id].dependencies:
-            visit(dependency)
-        visiting.remove(proposal_id)
-        visited.add(proposal_id)
+    ready = deque(
+        proposal_id
+        for proposal_id, count in pending_dependencies.items()
+        if count == 0
+    )
+    visited = 0
+    while ready:
+        proposal_id = ready.popleft()
+        visited += 1
+        for child in dependents[proposal_id]:
+            pending_dependencies[child] -= 1
+            if pending_dependencies[child] == 0:
+                ready.append(child)
+    if visited != len(by_id):
+        cycle = next(
+            proposal_id
+            for proposal_id, count in pending_dependencies.items()
+            if count > 0
+        )
+        raise ValueError(f"cyclic proposal dependency: {cycle}")
 
-    for proposal_id in by_id:
-        visit(proposal_id)
     return tuple(by_id.values())
 
 
