@@ -360,28 +360,8 @@ def _fusion_agent() -> FusionAgent:
 from backend.core.manifest.element_geometry import _element_bbox, _element_role
 
 
-def _target_elements(
-    manifest: ProcessingManifest, obligation_id: str
-) -> list[ManifestElement]:
-    """Elements an obligation points at, in reading order."""
-    obligation = next(
-        (o for o in manifest.obligations if o.id == obligation_id), None
-    )
-    if obligation is None:
-        return []
-    targets = set(obligation.target_ids)
-    return sorted(
-        (el for el in manifest.elements if el.id in targets),
-        key=lambda el: el.reading_order,
-    )
-
-
-def _missing_obligation(obligation_id: str) -> MethodResult:
-    return MethodResult(
-        success=False,
-        validated=False,
-        message=f"Obrigação não encontrada: {obligation_id}",
-    )
+# Legacy names; handler lookup is now shared by execution handlers.
+from backend.core.execution.handlers.common import _target_elements, _missing_obligation
 
 
 def _handle_vision_description_method(
