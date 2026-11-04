@@ -7,7 +7,7 @@ must not silently change their function identity or handler registration.
 from backend.agents import pddl_orchestrator as legacy
 from backend.core.execution import recovery
 from backend.core.execution.handlers import common, deterministic, mathematics
-from backend.core.manifest import element_geometry, payload, table_reading
+from backend.core.manifest import element_geometry, payload, payload_lists, payload_text, table_reading
 from backend.core.manifest.preprocessing import media_triage, visual_signals
 from backend.core.planning import coordinator
 
@@ -16,6 +16,10 @@ def test_manifest_compatibility_exports_are_actual_extracted_implementations():
     assert legacy.build_pddl_structured_payload is payload.build_pddl_structured_payload
     assert legacy.records_visual_failures is payload.records_visual_failures
     assert legacy._element_to_block is payload._element_to_block
+    assert legacy._recover_empty_lettered_list_items is payload_lists._recover_empty_lettered_list_items
+    assert legacy._merge_list_blocks is payload_lists._merge_list_blocks
+    assert legacy._render_text_from_blocks is payload_text._render_text_from_blocks
+    assert legacy._normalize_metadata_links is payload_text._normalize_metadata_links
     assert legacy._rows_from_visual_table_text is table_reading._rows_from_visual_table_text
     assert legacy._table_ast_from_metadata is table_reading._table_ast_from_metadata
     assert legacy._element_bbox is element_geometry._element_bbox
