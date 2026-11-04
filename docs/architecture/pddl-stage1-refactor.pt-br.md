@@ -193,3 +193,33 @@ homologação contra o par Core/Toolbox e a VLM de homologação, além de
 comparar resultados reais de PDF, apresentação e falhas com o baseline 0.2.0.
 Antes disso, afirmar "100%" seria incorreto.
 
+
+
+### Correção de isolamento e gate de homologação por opt-in
+
+Após os testes de regressão iniciais, o gate de catálogo passou a usar
+`toolbox_endpoints()[0]`, exatamente como o gateway VLM do Core, em vez
+de `TOOLBOX_BASE_URL` quando `TOOLBOX_BASE_URLS` o substitui.
+O cache de catálogo é descartado quando muda o endpoint efetivo ou sua
+credencial; isto impede reutilizar snapshot de PROD em HOMOL.
+
+**O workflow manual `workflow_dispatch` não pode ser disparado enquanto o
+arquivo existir apenas nesta branch e não em `main` do fork.** Para não
+modificar `main` nem iniciar operações reais automaticamente, o
+`refactor-stage1-homolog.yml` também suporta um gate de push explicitamente
+autorizado, inativo por padrão.
+
+Para executar **somente** em homologação, configurar no fork:
+
+- `Actions > Secrets`: `ACESSILIA_HOMOLOG_TOOLBOX_URL` e `ACESSILIA_HOMOLOG_TOOLBOX_KEY`;
+- `Actions > Variables`: `ACESSILIA_HOMOLOG_ALLOWED_HOST` (hostname exato, sem protocolo, da Toolbox HOMOL);
+- `Actions > Variables`: `ACESSILIA_STAGE1_HOMOLOG_ENABLED=true` para permitir execução no próximo push desta branch.
+
+O gate recusa HTTP não criptografado, host fora da allowlist, segredo
+vazio, serviços inacessíveis e qualquer teste ignorado.
+Valida seis contratos: render PDF, MathML, verbalização, extração dual,
+artefato de fusão e **health + chat VLM através da rota da Toolbox**.
+
+Sem um resultado verde deste gate no ambiente real, o aceite final segue
+como **"implementada e validada offline; homologação externa pendente"**.
+Não executar o gate contra produção.

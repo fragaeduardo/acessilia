@@ -1,6 +1,12 @@
 name: Stage 1 homologation E2E (manual only)
 
 on:
+  # The workflow exists only on this fork branch. workflow_dispatch cannot
+  # start it until it exists on the fork's default branch, which we do not
+  # mutate during Stage 1. Opt-in push is the executable branch-only trigger.
+  push:
+    branches:
+      - refactor/etapa-1-orchestrator-planner
   workflow_dispatch:
     inputs:
       confirm_homologation:
@@ -18,13 +24,18 @@ concurrency:
 
 jobs:
   e2e-homolog:
-    if: github.ref == 'refs/heads/refactor/etapa-1-orchestrator-planner' && inputs.confirm_homologation
+    if: >-
+      github.repository == 'fragaeduardo/acessilia' &&
+      github.ref == 'refs/heads/refactor/etapa-1-orchestrator-planner' &&
+      ((github.event_name == 'push' && vars.ACESSILIA_STAGE1_HOMOLOG_ENABLED == 'true') ||
+       (github.event_name == 'workflow_dispatch' && inputs.confirm_homologation))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       TOOLBOX_BASE_URL: ${{ secrets.ACESSILIA_HOMOLOG_TOOLBOX_URL }}
       TOOLBOX_API_KEY: ${{ secrets.ACESSILIA_HOMOLOG_TOOLBOX_KEY }}
       TOOLBOX_BASE_URLS: ""
+      HOMOLOG_ALLOWED_HOST: ${{ vars.ACESSILIA_HOMOLOG_ALLOWED_HOST }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -42,8 +53,13 @@ jobs:
           from urllib.parse import urlparse
           url = os.environ["TOOLBOX_BASE_URL"]
           parsed = urlparse(url)
-          if parsed.scheme != "https" or not parsed.hostname:
-              raise SystemExit("HOMOLOG Toolbox URL must be a valid HTTPS endpoint")
+          expected_host = os.getenv("HOMOLOG_ALLOWED_HOST", "").strip()
+          if parsed.scheme != "https" or not parsed.hostname or not expected_host:
+              raise SystemExit("HOMOLOG Toolbox URL must be HTTPS and allowed host must be set")
+          if parsed.hostname.casefold() != expected_host.casefold():
+              raise SystemExit("Toolbox URL host is not the configured HOMOLOG allowlist host")
+          if parsed.username or parsed.password or parsed.query or parsed.fragment:
+              raise SystemExit("HOMOLOG Toolbox URL contains unsupported URL components")
           PY
           curl --fail --silent --show-error --max-time 15 "$TOOLBOX_BASE_URL/v1/health" >/dev/null
       - name: Install Core and SDK dependencies
@@ -59,7 +75,8 @@ jobs:
             tests/test_toolbox_e2e.py::TestMathClientE2E::test_convert_latex_to_mathml \
             tests/test_toolbox_e2e.py::TestMathClientE2E::test_verbalize_latex \
             tests/test_fusion_e2e.py::test_extract_fused_against_real_toolbox \
-            tests/test_fusion_e2e.py::test_fusion_handler_with_real_toolbox
+            tests/test_fusion_e2e.py::test_fusion_handler_with_real_toolbox \
+            tests/test_stage1_homologation_e2e.py::test_gateway_health_and_chat_are_reached_only_via_homolog_toolbox
       - name: Reject skipped E2E tests
         run: |
           python - <<'PY'
@@ -68,9 +85,9 @@ jobs:
           report = ElementTree.parse(Path("homolog-results.xml"))
           tests = report.findall(".//testcase")
           skipped = report.findall(".//skipped")
-          if len(tests) != 5 or skipped:
+          if len(tests) != 6 or skipped:
               raise SystemExit(
-                  f"HOMOLOG E2E did not execute all five contracts: "
+                  f"HOMOLOG E2E did not execute all six contracts: "
                   f"{len(tests)} cases, {len(skipped)} skipped"
               )
           PY
