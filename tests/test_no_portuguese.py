@@ -280,6 +280,13 @@ EXEMPT_STRINGS: list[tuple[str, str]] = [
     ("backend/core/execution/handlers/fusion_selection.py", "message=\"Juiz VLM confirma a página aplicada: \""),
     ("backend/core/execution/handlers/fusion_selection.py", "message=\"XY-cut não identificou uma mudança de ordem de leitura\","),
     ("backend/core/execution/handlers/fusion_selection.py", "\"Ordem de leitura XY-cut aplicada nas páginas \""),
+    ("backend/core/execution/handlers/fusion_execution.py", "message=f\"Obrigação não encontrada: {obligation_id}\","),
+    ("backend/core/execution/handlers/fusion_execution.py", "message=f\"Fusão dual-provider falhou: {type(exc).__name__}: {exc}\","),
+    ("backend/core/execution/handlers/fusion_execution.py", "message=\"Fusão dual-provider não concluiu com sucesso\","),
+    ("backend/core/execution/handlers/fusion_execution.py", "\"Fusão dual-provider executou com um único provider \""),
+    ("backend/core/execution/handlers/fusion_execution.py", "f\"({provider or 'desconhecido'}); replanning necessário\""),
+    ("backend/core/execution/handlers/fusion_execution.py", "message=\"Fusão dual-provider concluída com sucesso\","),
+    ("backend/core/execution/handlers/fusion_execution.py", "message=\"single-provider só é válido para fuse-providers\","),
     # Existing user-visible strings relocated into dedicated execution modules.
     ("backend/core/execution/handlers/common.py", "Obrigação não encontrada:"),
     ("backend/core/execution/handlers/common.py", "Escalonado para revisão humana:"),
