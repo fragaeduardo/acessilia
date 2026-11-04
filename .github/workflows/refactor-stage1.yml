@@ -5,6 +5,10 @@ on:
     branches:
       - refactor/etapa-1-orchestrator-planner
 
+concurrency:
+  group: stage1-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -35,6 +39,7 @@ jobs:
           python -m pytest -q -m "not e2e" \
             tests/test_planning_proposals.py \
             tests/test_planning_coordinator.py \
+            tests/test_pddl_modularization_contract.py \
             tests/test_toolbox_availability_gate.py \
             tests/test_pddl_planning.py \
             tests/test_pddl_execution_contract.py \
