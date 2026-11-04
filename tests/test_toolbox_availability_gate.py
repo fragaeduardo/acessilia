@@ -62,6 +62,29 @@ def test_default_providers_pass_against_the_staging_catalogue() -> None:
     assert decision.unavailable_methods == []
 
 
+def test_math_execution_methods_require_the_live_toolbox_catalogue(monkeypatch) -> None:
+    """MathML and speech use math.convert/verbalize, not local algorithms."""
+    monkeypatch.setattr(settings, "toolbox_math_provider", "math-speech")
+    methods = ["mathml", "latex-verbalizer"]
+    live = toolbox_gate.evaluate(methods, _staging_snapshot(), mode="enforce")
+    assert live.blocked == {}
+
+    missing = toolbox_gate.evaluate(methods, None, mode="enforce")
+    assert missing.unavailable_methods == ["latex-verbalizer", "mathml"]
+
+    observing = toolbox_gate.evaluate(methods, None, mode="observe")
+    assert set(observing.blocked) == {"mathml", "latex-verbalizer"}
+    assert observing.unavailable_methods == []
+
+
+def test_math_provider_mismatch_is_visible_without_local_fallback(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "toolbox_math_provider", "unregistered-math")
+    decision = toolbox_gate.evaluate(
+        ["mathml", "latex-verbalizer"], _staging_snapshot(), mode="enforce"
+    )
+    assert set(decision.blocked) == {"mathml", "latex-verbalizer"}
+
+
 def test_unregistered_secondary_provider_blocks_only_dual_fusion(monkeypatch) -> None:
     monkeypatch.setattr(settings, "fusion_secondary_provider", "qwen3-vl-page")
 
