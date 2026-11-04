@@ -19,7 +19,7 @@ from backend.tools.media_inspect import inspect_source_media
 
 
 async def _inspect_media(
-    source_path: Path,
+    source_path: Path, *, inspect_fn=None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     """Runs ``media.inspect`` and degrades visibly when it fails.
 
@@ -40,7 +40,7 @@ async def _inspect_media(
     from backend.config.settings import settings
 
     try:
-        media_inspection = await inspect_source_media(source_path)
+        media_inspection = await (inspect_fn or inspect_source_media)(source_path)
     except Exception as exc:  # noqa: BLE001 - the step degrades, never fails the job
         cause = f"{type(exc).__name__}: {exc}"
         logger.warning(

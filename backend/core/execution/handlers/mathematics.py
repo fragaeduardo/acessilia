@@ -47,7 +47,8 @@ def _implicit_product_variables(manifest: ProcessingManifest) -> frozenset[str]:
 
 
 def _handle_mathml_method(
-    manifest: ProcessingManifest, obligation_id: str
+    manifest: ProcessingManifest, obligation_id: str, *,
+    convert_latex=None,
 ) -> MethodResult:
     """Converte o LaTeX das fórmulas alvo em MathML (metadata.mathml) via math.convert.
 
@@ -66,7 +67,7 @@ def _handle_mathml_method(
     for element in elements:
         latex = mark_implicit_products(normalize_latex(element.text or ""), variables)
         try:
-            mathml = toolbox_convert_latex(latex) if latex else ""
+            mathml = (convert_latex or toolbox_convert_latex)(latex) if latex else ""
         except MathCapabilityUnavailable as exc:
             logger.warning("Handler mathml: {}", exc)
             return MethodResult(
@@ -91,7 +92,8 @@ def _handle_mathml_method(
 
 
 def _handle_latex_verbalizer_method(
-    manifest: ProcessingManifest, obligation_id: str
+    manifest: ProcessingManifest, obligation_id: str, *,
+    verbalize_latex=None,
 ) -> MethodResult:
     """Gera a verbalização pt-BR das fórmulas (metadata.verbalization) via math.verbalize.
 
@@ -110,7 +112,7 @@ def _handle_latex_verbalizer_method(
     for element in elements:
         latex = mark_implicit_products(normalize_latex(element.text or ""), variables)
         try:
-            spoken = label_spoken_formula(toolbox_verbalize_latex(latex)) if latex else ""
+            spoken = label_spoken_formula((verbalize_latex or toolbox_verbalize_latex)(latex)) if latex else ""
         except MathCapabilityUnavailable as exc:
             logger.warning("Handler latex-verbalizer: {}", exc)
             return MethodResult(

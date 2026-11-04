@@ -64,8 +64,9 @@ def build_pddl_structured_payload(
     execution_report: ExecutionReport | None,
     comparison: PlanningComparison | None,
     toolbox_availability: dict[str, Any] | None = None,
+    pages_builder=None,
 ) -> dict[str, Any]:
-    pages_payload = _manifest_pages_to_payload(manifest)
+    pages_payload = (pages_builder or _manifest_pages_to_payload)(manifest)
     text_output = _render_text_from_pages(pages_payload)
     configuration = manifest.extractor.configuration
     media_inspection_status = configuration.get("media_inspection")

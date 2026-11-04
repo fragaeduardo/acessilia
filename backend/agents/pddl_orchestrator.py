@@ -122,7 +122,6 @@ from backend.core.manifest.payload import (
     MSG_LETTERHEAD_TEXT,
     MSG_PICTURES_NOT_DESCRIBED,
     MSG_TABLES_NOT_READ,
-    build_pddl_structured_payload,
     _visual_failures,
     records_visual_failures,
     records_extraction_degradation,
@@ -173,11 +172,62 @@ from backend.core.execution.recovery import (
 
 
 # Math execution handlers live under core.execution.handlers.
-from backend.core.execution.handlers.mathematics import (
-    _implicit_product_variables,
-    _handle_mathml_method,
-    _handle_latex_verbalizer_method,
-)
+from backend.core.execution.handlers.mathematics import _implicit_product_variables
+from backend.core.execution.handlers import mathematics as _math_handlers
+from backend.core.manifest import payload as _payload_adapter
+from backend.core.manifest.preprocessing import media_triage as _media_triage
+from backend.tools.media_inspect import inspect_source_media
+from backend.tools.toolbox_math_tools import toolbox_convert_latex, toolbox_verbalize_latex
+
+
+def _handle_mathml_method(
+    manifest: ProcessingManifest, obligation_id: str
+) -> MethodResult:
+    """Compatibility delegate: preserve explicit Toolbox test overrides."""
+    return _math_handlers._handle_mathml_method(
+        manifest, obligation_id, convert_latex=toolbox_convert_latex
+    )
+
+
+def _handle_latex_verbalizer_method(
+    manifest: ProcessingManifest, obligation_id: str
+) -> MethodResult:
+    """Compatibility delegate: preserve explicit Toolbox test overrides."""
+    return _math_handlers._handle_latex_verbalizer_method(
+        manifest, obligation_id, verbalize_latex=toolbox_verbalize_latex
+    )
+
+
+async def _inspect_media(
+    source_path: Path,
+) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    """Compatibility delegate preserving the injectable media inspector."""
+    return await _media_triage._inspect_media(
+        source_path, inspect_fn=inspect_source_media
+    )
+
+
+def build_pddl_structured_payload(
+    *,
+    file_path: Path,
+    manifest: ProcessingManifest,
+    plan: NominalPlan,
+    planner_backend: str,
+    execution_report: ExecutionReport | None,
+    comparison: PlanningComparison | None,
+    toolbox_availability: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Keep the legacy page-builder override without mutable global patching."""
+    return _payload_adapter.build_pddl_structured_payload(
+        file_path=file_path,
+        manifest=manifest,
+        plan=plan,
+        planner_backend=planner_backend,
+        execution_report=execution_report,
+        comparison=comparison,
+        toolbox_availability=toolbox_availability,
+        pages_builder=_manifest_pages_to_payload,
+    )
 
 
 def _run_extract_fused(
@@ -3703,7 +3753,6 @@ async def _enrich_formula_latex(
 
 # Preprocessing before PDDL: keep legacy imports stable.
 from backend.core.manifest.preprocessing.media_triage import (
-    _inspect_media,
     _is_presentation,
     _inject_full_page_picture,
 )

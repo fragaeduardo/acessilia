@@ -13,7 +13,9 @@ from backend.core.planning import coordinator
 
 
 def test_manifest_compatibility_exports_are_actual_extracted_implementations():
-    assert legacy.build_pddl_structured_payload is payload.build_pddl_structured_payload
+    # The public facade delegates instead of sharing function identity because
+    # existing integrations monkeypatch its page builder.
+    assert legacy.build_pddl_structured_payload is not payload.build_pddl_structured_payload
     assert legacy.records_visual_failures is payload.records_visual_failures
     assert legacy._element_to_block is payload._element_to_block
     assert legacy._recover_empty_lettered_list_items is payload_lists._recover_empty_lettered_list_items
@@ -36,8 +38,9 @@ def test_recovery_exports_are_still_usable_by_orchestrator_callers():
 def test_handlers_share_one_implementation_with_original_registry_entrypoints():
     assert legacy._target_elements is common._target_elements
     assert legacy._missing_obligation is common._missing_obligation
-    assert legacy._handle_mathml_method is mathematics._handle_mathml_method
-    assert legacy._handle_latex_verbalizer_method is mathematics._handle_latex_verbalizer_method
+    # Legacy math handlers are safe thin wrappers for injectable Toolbox calls.
+    assert legacy._handle_mathml_method is not mathematics._handle_mathml_method
+    assert legacy._handle_latex_verbalizer_method is not mathematics._handle_latex_verbalizer_method
     assert legacy._handle_pandoc_table_method is deterministic._handle_pandoc_table_method
     assert legacy._handle_norm_fix_method is deterministic._handle_norm_fix_method
     assert legacy._handle_human_review_method is common._handle_human_review_method
@@ -45,7 +48,7 @@ def test_handlers_share_one_implementation_with_original_registry_entrypoints():
 
 
 def test_preprocessing_exports_keep_original_contracts():
-    assert legacy._inspect_media is media_triage._inspect_media
+    assert legacy._inspect_media is not media_triage._inspect_media
     assert legacy._is_presentation is media_triage._is_presentation
     assert legacy._inject_full_page_picture is media_triage._inject_full_page_picture
     assert legacy._has_meaningful_text is visual_signals._has_meaningful_text
