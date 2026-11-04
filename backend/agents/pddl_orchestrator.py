@@ -314,7 +314,7 @@ from backend.core.execution.handlers.unicode_repair import (
 
 # Pixel verification and region/page handlers live under core.execution.
 from backend.core.execution.handlers import region_inspection as _region_handlers
-from backend.core.manifest.preprocessing.render_regions import _RENDERABLE_MEDIA_TYPES
+from backend.core.manifest.preprocessing.render_regions import _RENDERABLE_MEDIA_TYPES, _source_artifact_id
 
 
 def _toolbox_render(
