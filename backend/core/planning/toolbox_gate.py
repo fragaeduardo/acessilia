@@ -35,6 +35,7 @@ from acessilia_sdk.toolbox import (
 )
 from backend.config.settings import settings
 from backend.core.manifest.models import ProcessingManifest
+from backend.tools.toolbox_client import toolbox_endpoints
 
 GATE_MODES = ("observe", "enforce", "off")
 
@@ -141,27 +142,48 @@ def evaluate(
     )
 
 
+def _catalog_endpoint_identity() -> tuple[str, str]:
+    """Use the very same first configured Toolbox endpoint as VLM and clients.
+
+    The catalogue is intentionally conservative: if that endpoint fails,
+    enforcement fails closed rather than silently consulting an unrelated
+    endpoint or another deployment. The SDK may fail over capability calls,
+    but this gate does not speculate on another replica's capabilities.
+    """
+    endpoint = toolbox_endpoints()[0]
+    return endpoint.base_url, endpoint.api_key or settings.toolbox_api_key
+
+
 async def _fetch() -> CatalogSnapshot:
+    url, api_key = _catalog_endpoint_identity()
     async with httpx.AsyncClient(
-        base_url=settings.toolbox_base_url.rstrip("/"),
+        base_url=url,
         timeout=httpx.Timeout(CATALOG_TIMEOUT_SECONDS),
-        headers=auth_headers(settings.toolbox_api_key),
+        headers=auth_headers(api_key),
     ) as http:
         return await fetch_catalog(http)
 
 
 _cache: CatalogCache | None = None
+_cache_identity: tuple[str, str] | None = None
 
 
 def catalog_cache() -> CatalogCache:
-    """Process-wide cache, so concurrent documents share one catalogue read."""
-    global _cache
-    if _cache is None:
+    """Share cache only while the effective Toolbox endpoint/key are unchanged.
+
+    This prevents a dynamically reconfigured worker from using a PROD
+    catalogue snapshot to authorize HOMOLOG planning (or vice versa).
+    The identity is never recorded in output metadata or log messages.
+    """
+    global _cache, _cache_identity
+    identity = _catalog_endpoint_identity()
+    if _cache is None or _cache_identity != identity:
         _cache = CatalogCache(
             _fetch,
             refresh_seconds=settings.toolbox_catalog_refresh_seconds,
             stale_seconds=settings.toolbox_catalog_stale_seconds,
         )
+        _cache_identity = identity
     return _cache
 
 

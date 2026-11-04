@@ -200,3 +200,60 @@ def test_every_gated_method_has_a_handler() -> None:
     """A requirement for a method nobody runs would be dead configuration."""
     registered = set(_orchestrator().executor.registry.names())
     assert set(toolbox_gate.METHOD_TOOLBOX_REQUIREMENTS) <= registered
+
+
+@pytest.mark.asyncio
+async def test_catalog_fetch_uses_the_toolbox_client_environment_not_legacy_base_url(
+    monkeypatch,
+):
+    """A stale PROD URL must never select the catalogue when HOMOLOG URLs win."""
+    monkeypatch.setattr(settings, "toolbox_base_url", "https://prod-never-used.example")
+    monkeypatch.setattr(
+        settings, "toolbox_base_urls",
+        "https://homolog-primary.example, https://homolog-secondary.example",
+    )
+    monkeypatch.setattr(settings, "toolbox_api_key", "homolog-key")
+    captured = []
+    snapshot = _staging_snapshot()
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            captured.append(kwargs)
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+    async def fake_catalog(client):
+        assert isinstance(client, FakeClient)
+        return snapshot
+
+    monkeypatch.setattr(toolbox_gate.httpx, "AsyncClient", FakeClient)
+    monkeypatch.setattr(toolbox_gate, "fetch_catalog", fake_catalog)
+    result = await toolbox_gate._fetch()
+
+    assert result is snapshot
+    assert len(captured) == 1
+    assert captured[0]["base_url"] == "https://homolog-primary.example"
+    assert captured[0]["headers"]["Authorization"] == "Bearer homolog-key"
+
+
+def test_availability_cache_is_not_shared_between_toolbox_environments(monkeypatch):
+    monkeypatch.setattr(settings, "toolbox_base_url", "https://unused.example")
+    monkeypatch.setattr(settings, "toolbox_base_urls", "https://prod.example")
+    monkeypatch.setattr(settings, "toolbox_api_key", "same-key")
+    monkeypatch.setattr(toolbox_gate, "_cache", None)
+    monkeypatch.setattr(toolbox_gate, "_cache_identity", None)
+
+    production_cache = toolbox_gate.catalog_cache()
+    assert toolbox_gate.catalog_cache() is production_cache
+
+    monkeypatch.setattr(settings, "toolbox_base_urls", "https://homolog.example")
+    homolog_cache = toolbox_gate.catalog_cache()
+    assert homolog_cache is not production_cache
+
+    # A credential rotation also requires a new cache, not a stale snapshot.
+    monkeypatch.setattr(settings, "toolbox_api_key", "rotated-key")
+    assert toolbox_gate.catalog_cache() is not homolog_cache
